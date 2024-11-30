@@ -1,6 +1,6 @@
 <?php
 
-namespace Mateffy\Magic;
+namespace Mateffy;
 
 use Closure;
 use Illuminate\Support\Collection;
