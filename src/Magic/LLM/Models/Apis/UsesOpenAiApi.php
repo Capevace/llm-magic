@@ -174,6 +174,8 @@ trait UsesOpenAiApi
             ])
             ->toArray();
 
+//        dd(method_exists($prompt, 'forceFunction'), $prompt->forceFunction());
+
         if (method_exists($prompt, 'forceFunction') && ($fn = $prompt->forceFunction())) {
 //            $toolchoice = ['type' => 'tool', 'name' => $fn->name()];
 //            {"type": "function", "function": {"name": "my_function"}}
