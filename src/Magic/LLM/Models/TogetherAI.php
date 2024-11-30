@@ -36,12 +36,12 @@ class TogetherAI extends ElElEm
 
     protected function getOpenAiApiKey(): string
     {
-        return config('magic-extract.apis.togetherai.token');
+        return config('llm-magic.apis.togetherai.token');
     }
 
     protected function getOpenAiBaseUri(): ?string
     {
-        return config('magic-extract.apis.togetherai.url');
+        return config('llm-magic.apis.togetherai.url');
     }
 
     public function __construct(

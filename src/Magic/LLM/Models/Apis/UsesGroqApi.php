@@ -20,7 +20,7 @@ trait UsesGroqApi
 {
     protected function getApiToken(): string
     {
-        return config('magic-extract.apis.groq.token');
+        return config('llm-magic.apis.groq.token');
     }
 
     protected function parameters(): array

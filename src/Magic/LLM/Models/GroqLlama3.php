@@ -19,7 +19,7 @@ class GroqLlama3 extends Llama3Family
 
     protected function getOpenAiApiKey(): string
     {
-        return config('magic-extract.apis.groq.token');
+        return config('llm-magic.apis.groq.token');
     }
 
     protected function getOpenAiBaseUri(): ?string

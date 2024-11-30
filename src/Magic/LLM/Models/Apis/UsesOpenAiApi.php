@@ -27,12 +27,12 @@ trait UsesOpenAiApi
 {
     protected function getOpenAiApiKey(): string
     {
-        return config('magic-extract.apis.openai.token');
+        return config('llm-magic.apis.openai.token');
     }
 
     protected function getOpenAiOrganization(): ?string
     {
-        return config('magic-extract.apis.openai.organization_id');
+        return config('llm-magic.apis.openai.organization_id');
     }
 
     protected function getOpenAiBaseUri(): ?string

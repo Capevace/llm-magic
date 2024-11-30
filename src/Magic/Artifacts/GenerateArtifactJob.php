@@ -28,7 +28,7 @@ class GenerateArtifactJob implements ShouldQueue
         $pythonDir = __DIR__.'/../../python';
         $script = 'prepare-pdf.py';
 
-        $uvPath = config('magic-extract.uv.path');
+        $uvPath = config('llm-magic.uv.path');
 
         $file = $this->file->getPath();
         $dir = str($file)

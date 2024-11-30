@@ -19,7 +19,7 @@ trait UsesAwsBedrockApi
 {
     protected function getApiToken(): string
     {
-        return config('magic-extract.apis.aws.token');
+        return config('llm-magic.apis.aws.token');
     }
 
     /**
@@ -61,7 +61,7 @@ trait UsesAwsBedrockApi
         }
 
         $bedrockClient = new BedrockRuntimeClient([
-            'region' => config('magic-extract.apis.aws.region', 'eu-central-1'),
+            'region' => config('llm-magic.apis.aws.region', 'eu-central-1'),
             'version' => 'latest',
             'profile' => 'default',
         ]);

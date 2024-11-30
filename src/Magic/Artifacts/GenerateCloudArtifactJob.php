@@ -29,7 +29,7 @@ class GenerateCloudArtifactJob implements ShouldQueue
         $pythonDir = base_path('packages/llm-magic/python');
         $script = 'prepare-pdf.py';
 
-        $uvPath = config('magic-extract.uv.path');
+        $uvPath = config('llm-magic.uv.path');
 
         $artifactTempDir = tempnam(sys_get_temp_dir(), 'cloud-artifact');
         $artifactTempPath = "{$artifactTempDir}/original.{$this->cloudArtifact->extension}";

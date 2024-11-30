@@ -38,7 +38,7 @@ trait UsesGeminiApi
 
     protected function getApiToken(): string
     {
-        return config('magic-extract.apis.gemini.token');
+        return config('llm-magic.apis.gemini.token');
     }
 
     protected function client(): Gemini\Resources\GenerativeModel

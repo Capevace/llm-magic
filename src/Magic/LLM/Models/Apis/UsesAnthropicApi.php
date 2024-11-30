@@ -35,7 +35,7 @@ trait UsesAnthropicApi
 {
     protected function getApiToken(): string
     {
-        return config('magic-extract.apis.anthropic.token');
+        return config('llm-magic.apis.anthropic.token');
     }
 
     /**

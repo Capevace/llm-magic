@@ -32,7 +32,7 @@ class GeminiFamily extends ElElEm
 
     protected function getOpenAiApiKey(): string
     {
-        return config('magic-extract.apis.gemini.token');
+        return config('llm-magic.apis.gemini.token');
     }
 
     protected function getOpenAiOrganization(): ?string

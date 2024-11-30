@@ -68,12 +68,12 @@ class OpenRouter extends ElElEm
 
     protected function getOpenAiApiKey(): string
     {
-        return config('magic-extract.apis.openrouter.token');
+        return config('llm-magic.apis.openrouter.token');
     }
 
     protected function getOpenAiBaseUri(): ?string
     {
-        return config('magic-extract.apis.openrouter.url');
+        return config('llm-magic.apis.openrouter.url');
     }
 
     public function __construct(
