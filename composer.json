@@ -34,6 +34,11 @@
             "php-http/discovery": true
         }
     },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.0-dev"
+        }
+    },
     "replace": {
         "mateffy/llm-magic": "1.0.0-rc1"
     }
