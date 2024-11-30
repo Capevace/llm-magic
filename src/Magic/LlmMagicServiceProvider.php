@@ -10,7 +10,7 @@ class LlmMagicServiceProvider extends PackageServiceProvider
     public function configurePackage(Package $package): void
     {
         $package
-            ->setBasePath(__DIR__ . '/../../')
+            ->setBasePath(__DIR__ . '/..')
             ->name('llm-magic')
             ->hasConfigFile();
     }
