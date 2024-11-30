@@ -1,13 +1,13 @@
 {
     "name": "mateffy/llm-magic",
     "description": "AI toolkit for Laravel",
-    "type": "library",
     "authors": [
         {
             "name": "Lukas Mateffy",
             "email": "github@mateffy.me"
         }
     ],
+    "type": "library",
     "require": {
         "aws/aws-sdk-php": "^3.315",
         "ext-fileinfo": "*",
@@ -24,9 +24,6 @@
     "require-dev": {
         "symplify/monorepo-builder": "^11.2"
     },
-    "replace": {
-        "mateffy/llm-magic": "self.version"
-    },
     "autoload": {
         "psr-4": {
             "Mateffy\\Magic\\": "packages/llm-magic/src/"
@@ -36,5 +33,8 @@
         "allow-plugins": {
             "php-http/discovery": true
         }
+    },
+    "replace": {
+        "mateffy/llm-magic": "1.0.0-rc1"
     }
 }
