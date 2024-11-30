@@ -11,6 +11,6 @@ class LlmMagicServiceProvider extends PackageServiceProvider
     {
         $package
             ->name('llm-magic')
-            ->hasConfigFile();
+            ->hasConfigFile('../../config/llm-magic.php');
     }
 }
