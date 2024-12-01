@@ -7,7 +7,7 @@ use Mateffy\Magic\Builder\Concerns\HasInput;
 use Mateffy\Magic\Builder\Concerns\HasTokenCallback;
 use Mateffy\Magic\Embeddings\EmbeddedData;
 use Mateffy\Magic\Embeddings\OpenAIEmbeddingModel;
-use Mateffy\Magic\Magic;
+use Mateffy\Magic;
 
 class EmbeddingsBuilder
 {

@@ -35,6 +35,58 @@ class Magic
         return new ChatPreconfiguredModelBuilder;
     }
 
+    public static function ask(string $prompt, array $schema = ['type' => 'string'], string|LLM|null $model = null, bool $sentence = true): mixed
+    {
+        if ($schema['type'] === 'string') {
+            $sentenceNotice = $sentence
+                ? 'You are expected to respond with a single sentence, straight to the point. Not just a single word, but a full sentence. For example, reply "The capital of France is Paris" instead of just "Paris".'
+                : 'Try to respond with just the answer, no sentence around it. For example, reply "Paris" instead of "The capital of France is Paris"';
+        } else {
+            $sentenceNotice = 'concise and to the point';
+        }
+
+
+        $response = Magic::chat()
+            ->model($model ?? self::getDefaultModel())
+            ->system(<<<PROMPT
+            <instructions>
+            You are an expert question answerer. 
+            You are concise and try to keep it short, but you fill it with high quality information in response to the question. 
+            
+            <character>
+            You don't need to do all the chatbot assistant messaging (saying sorry, giving alternatives, etc.). 
+            If you can't answer a question, just state so concisely, and do not give other information or ask a question that wasn't asked. 
+            Avoid using multiple lines of text unless necessary.
+            </character> 
+            
+            <output-format>
+            By default your response will just be a simple string value message, 
+            but the schema can be changed by the user and may be structured data. 
+            In that case return the data in the 'returnValue' field.
+            </output-format>
+            
+            <response-length>
+            {$sentenceNotice}
+            </response-length>
+            </instructions>
+            PROMPT)
+            ->messages([
+                TextMessage::user($prompt)
+            ])
+            ->tools([
+                'extract' => new Magic\Functions\Extract([
+                    'type' => 'object',
+                    'properties' => [
+                        'returnValue' => $schema
+                    ]
+                ])
+            ])
+            ->toolChoice('extract')
+            ->stream();
+
+        return $response->firstFunctionOutput()?->output['returnValue'] ?? null;
+    }
+
     public static function end(mixed $output): EndConversation
     {
         return new EndConversation($output);
@@ -81,19 +133,6 @@ class Magic
         } else {
             throw new UnknownInferenceException('LLM did not return a valid response: '.json_encode($output));
         }
-    }
-
-    public static function ask(string $question, LLM|string|null $llm = null): string
-    {
-        $messages = Magic::chat()
-            ->model($llm ?? self::getDefaultModel())
-            ->system("You are an expert question answerer. You are concise and try to keep it short, but you fill it with high quality information in response to the question. You don't need to do all the chatbot assistant messaging (saying sorry, giving alternatives, etc.). If you can't answer a question, just state so concisely, and do not give other information or ask a question that wasn't asked. If you can, answer as compactly as possible. Avoid using multiple lines of text unless necessary.")
-            ->messages([
-                TextMessage::user($question)
-            ])
-            ->stream();
-
-        return $messages->firstText();
     }
 
     public static function memory(): MagicMemory

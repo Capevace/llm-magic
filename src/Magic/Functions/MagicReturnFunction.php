@@ -5,7 +5,7 @@ namespace Mateffy\Magic\Functions;
 
 use Illuminate\Container\Container;
 use Mateffy\Magic\LLM\Message\FunctionCall;
-use Mateffy\Magic\Magic;
+use Mateffy\Magic;
 
 class MagicReturnFunction implements InvokableFunction
 {

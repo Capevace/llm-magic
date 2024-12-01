@@ -3,7 +3,7 @@
 namespace Mateffy\Magic\Functions;
 
 use Mateffy\Magic\LLM\Message\FunctionCall;
-use Mateffy\Magic\Magic;
+use Mateffy\Magic;
 
 class MergeData implements InvokableFunction
 {

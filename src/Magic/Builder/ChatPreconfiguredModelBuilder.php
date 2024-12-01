@@ -89,9 +89,13 @@ class ChatPreconfiguredModelBuilder
                 return array_values($this->builder->tools);
             }
 
-            public function forceFunction(): ?string
+            public function forceFunction(): ?InvokableFunction
             {
-                return $this->builder->toolChoice;
+                if (!$this->builder->toolChoice) {
+                    return null;
+                }
+
+                return $this->builder->tools[$this->builder->toolChoice] ?? null;
             }
 
             public function shouldParseJson(): bool

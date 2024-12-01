@@ -10,7 +10,7 @@ use Mateffy\Magic\LLM\Message\DataMessage;
 use Mateffy\Magic\LLM\Message\Message;
 use Mateffy\Magic\LLM\Message\TextMessage;
 use Mateffy\Magic\Loop\InferenceResult;
-use Mateffy\Magic\Magic;
+use Mateffy\Magic;
 use Mateffy\Magic\Prompt\ParallelMergerPrompt;
 use Mateffy\Magic\Prompt\Role;
 use Mateffy\Magic\Prompt\SequentialExtractorPrompt;
