@@ -130,7 +130,13 @@ trait UsesOpenAiApi
                                             'image_url' => [
                                                 'url' => "data:{$message->mime};base64,{$message->imageBase64}"
                                             ]
-                                        ]
+                                        ],
+//                                        Base64Image::class => [
+//                                            'type' => 'image_url',
+//                                            'image_url' => [
+//                                                'url' => "data:{$message->mime};base64,{$message->imageBase64}"
+//                                            ]
+//                                        ]
                                     })
                                     ->toArray(),
                             ]
@@ -197,8 +203,7 @@ trait UsesOpenAiApi
                 ->chat()
                 ->createStreamed(array_filter([
                     'model' => str($this->model)
-                        ->after('openai/')
-                        ->after('google/'),
+                        ->after('openai/'),
                     'messages' => $messages,
                     'tools' => count($tools) > 0 ? $tools : null,
                     'tool_choice' => $toolchoice,
@@ -221,7 +226,8 @@ trait UsesOpenAiApi
 
             return MessageCollection::make($decoder->process());
         } catch (\Throwable $e) {
-            dd($e);
+            report($e);
+
             throw new UnknownInferenceException($e->getMessage(), previous: $e);
         }
 //

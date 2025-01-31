@@ -24,33 +24,14 @@ class GenerateArtifactJob implements ShouldQueue
      */
     public function handle(): void
     {
-        // Run python script
-        $pythonDir = __DIR__.'/../../python';
-        $script = 'prepare-pdf.py';
-
-        $uvPath = config('llm-magic.uv.path');
-
-        $file = $this->file->getPath();
-        $dir = str($file)
-            ->beforeLast('/')
-            ->append('/artifact');
-
         $this->file->artifact_status = ArtifactGenerationStatus::InProgress;
         $this->file->save();
 
         try {
-            // Change working directory to the artifact directory
-            $currentDir = getcwd();
-            chdir($pythonDir);
+            $artifact = FileArtifact::from(path: $this->file->getOriginalPath(), disk: $this->file->getOriginalDisk());
 
-            $safeFile = escapeshellarg($file);
-
-            $output = shell_exec("$uvPath run --isolated $script $dir $safeFile -- --json");
-            $json = json_decode($output, true);
-
-            if (isset($json['error'])) {
-                throw new ArtifactGenerationFailed($json['error']);
-            }
+            // Call get contents to ensure the artifact is looked through and cached
+            $artifact->refreshContents();
 
             $this->file->artifact_status = ArtifactGenerationStatus::Complete;
             $this->file->save();
@@ -64,8 +45,6 @@ class GenerateArtifactJob implements ShouldQueue
             $this->file->save();
 
             throw new ArtifactGenerationFailed($e->getMessage(), previous: $e);
-        } finally {
-            chdir($currentDir);
         }
     }
 }

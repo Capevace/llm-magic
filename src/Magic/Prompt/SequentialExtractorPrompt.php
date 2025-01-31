@@ -2,16 +2,17 @@
 
 namespace Mateffy\Magic\Prompt;
 
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Blade;
 use Mateffy\Magic\Artifacts\Artifact;
-use Mateffy\Magic\Artifacts\Content\ImageContent;
-use Mateffy\Magic\Artifacts\Content\TextContent;
+use Mateffy\Magic\Artifacts\Content\Content;
+use Mateffy\Magic\Artifacts\Content\EmbedContent;
+use Mateffy\Magic\Artifacts\Content\RawTextContent;
 use Mateffy\Magic\Config\Extractor;
 use Mateffy\Magic\Functions\Extract;
 use Mateffy\Magic\Functions\InvokableFunction;
 use Mateffy\Magic\LLM\Message\MultimodalMessage;
 use Mateffy\Magic\LLM\Message\TextMessage;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Blade;
 
 class SequentialExtractorPrompt implements Prompt
 {
@@ -96,13 +97,13 @@ class SequentialExtractorPrompt implements Prompt
         $artifacts = collect($this->artifacts)
             ->map(function (Artifact $artifact) {
                 $pages = collect($artifact->getContents())
-                    ->filter(fn ($content) => $content instanceof TextContent)
-                    ->groupBy(fn (TextContent $content) => $content->page ?? 0)
+                    ->filter(fn ($content) => $content instanceof RawTextContent)
+                    ->groupBy(fn (RawTextContent $content) => $content->page ?? 0)
                     ->sortBy(fn (Collection $contents, $page) => $page)
                     ->values()
                     ->flatMap(fn (Collection $contents) => collect($contents)
-                        ->map(fn (TextContent $content) => match ($content::class) {
-                            TextContent::class => Blade::render("<page num=\"{{ \$content->page }}\">\n{{ \$content->text }}\n</page>", ['content' => $content]),
+                        ->map(fn (RawTextContent $content) => match ($content::class) {
+                            RawTextContent::class => Blade::render("<page num=\"{{ \$content->page }}\">\n{{ \$content->text }}\n</page>", ['content' => $content]),
                         })
                     )
                     ->join("\n\n");
@@ -148,21 +149,12 @@ class SequentialExtractorPrompt implements Prompt
             ];
         }
 
-        $imageMessages = collect($this->artifacts)
-            ->flatMap(fn (Artifact $artifact) => collect($artifact->getContents())
-                ->filter(fn (TextContent|ImageContent $content) => $content instanceof ImageContent)
-                ->groupBy(fn (TextContent|ImageContent $content) => $content->page ?? 0)
-                ->sortBy(fn (Collection $contents, $page) => $page)
-                ->flatMap(fn (Collection $contents) => collect($contents)
-                    ->map(fn (ImageContent $image) => $artifact->getBase64Image($image))
-                )
-            );
-
         return [
             // Attach images to the prompt
             new MultimodalMessage(role: Role::User, content: [
                 new \Mateffy\Magic\LLM\Message\MultimodalMessage\Text($this->prompt()),
-                ...$imageMessages,
+                ...collect($this->artifacts)
+                    ->flatMap(fn (Artifact $artifact) => $artifact->getBase64Images()),
             ]),
         ];
     }

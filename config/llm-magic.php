@@ -1,6 +1,21 @@
 <?php
 
 return [
+    'llm' => [
+        'default' => 'anthropic/claude-3-haiku',
+//        'default' => 'groq/llama-3.3-70b-versatile',
+    ],
+    'artifacts' => [
+        'base' => env('LLM_MAGIC_ARTIFACTS_BASE', storage_path('app/magic-artifacts')),
+        'disk' => env('LLM_MAGIC_ARTIFACTS_DISK', 'artifacts'),
+        'prefix' => env('LLM_MAGIC_ARTIFACTS_PREFIX', ''),
+    ],
+    'python' => [
+        'uv' => [
+            'path' => env('LLM_MAGIC_UV_PATH', '/usr/bin/env uv'),
+        ],
+        'cwd' => env('LLM_MAGIC_PYTHON_CWD', realpath(__DIR__ . '/../python')),
+    ],
     'apis' => [
         'anthropic' => [
             'token' => env('ANTHROPIC_API_KEY'),
@@ -11,6 +26,13 @@ return [
         ],
         'groq' => [
             'token' => env('GROQ_API_KEY'),
+        ],
+        'openrouter' => [
+            'token' => env('OPENROUTER_API_KEY'),
+            'url' => env('OPENROUTER_API_URL', 'https://openrouter.ai/api/v1'),
+        ],
+        'togetherai' => [
+            'token' => env('TOGETHERAI_API_KEY'),
         ],
     ],
 

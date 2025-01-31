@@ -10,12 +10,14 @@ use Mateffy\Magic\Builder\ExtractionLLMBuilder;
 use Mateffy\Magic\Embeddings\OpenAIEmbeddingModel;
 use Mateffy\Magic\Functions\Exceptions\ToolCallException;
 use Mateffy\Magic\Functions\MagicReturnFunction;
+use Mateffy\Magic\LLM\ElElEm;
 use Mateffy\Magic\LLM\Exceptions\UnableToActAsFunction;
 use Mateffy\Magic\LLM\Exceptions\UnknownInferenceException;
 use Mateffy\Magic\LLM\LLM;
 use Mateffy\Magic\LLM\Message\TextMessage;
 use Mateffy\Magic\LLM\Models\Claude3Family;
 use Mateffy\Magic\LLM\Models\Gpt4Family;
+use Mateffy\Magic\LLM\Models\GroqLlama3;
 use Mateffy\Magic\LLM\Models\OpenRouter;
 use Mateffy\Magic\LLM\Models\TogetherAI;
 use Mateffy\Magic\Loop\EndConversation;
@@ -31,7 +33,7 @@ class Magic
     }
 
     public static function chat(): ChatPreconfiguredModelBuilder
-    {
+    {;
         return new ChatPreconfiguredModelBuilder;
     }
 
@@ -47,24 +49,24 @@ class Magic
 
 
         $response = Magic::chat()
-            ->model($model ?? self::getDefaultModel())
+            ->model($model ?? self::defaultModel())
             ->system(<<<PROMPT
             <instructions>
-            You are an expert question answerer. 
-            You are concise and try to keep it short, but you fill it with high quality information in response to the question. 
-            
+            You are an expert question answerer.
+            You are concise and try to keep it short, but you fill it with high quality information in response to the question.
+
             <character>
-            You don't need to do all the chatbot assistant messaging (saying sorry, giving alternatives, etc.). 
-            If you can't answer a question, just state so concisely, and do not give other information or ask a question that wasn't asked. 
+            You don't need to do all the chatbot assistant messaging (saying sorry, giving alternatives, etc.).
+            If you can't answer a question, just state so concisely, and do not give other information or ask a question that wasn't asked.
             Avoid using multiple lines of text unless necessary.
-            </character> 
-            
+            </character>
+
             <output-format>
-            By default your response will just be a simple string value message, 
-            but the schema can be changed by the user and may be structured data. 
+            By default your response will just be a simple string value message,
+            but the schema can be changed by the user and may be structured data.
             In that case return the data in the 'returnValue' field.
             </output-format>
-            
+
             <response-length>
             {$sentenceNotice}
             </response-length>
@@ -105,7 +107,7 @@ class Magic
     public static function function(string $description, string $type, ?array $schema = null, LLM|string|null $llm = null): mixed
     {
         $messages = Magic::chat()
-            ->model($llm ?? self::getDefaultModel())
+            ->model($llm ?? self::defaultModel())
             ->system(<<<PROMPT
             You are a function that returns a value of type {$type}.
 
@@ -140,11 +142,6 @@ class Magic
         return new MagicMemory;
     }
 
-    public static function getDefaultModel(): LLM
-    {
-        return Claude3Family::haiku();
-    }
-
     public static function embeddings(Closure|string|null $input = null, ?OpenAIEmbeddingModel $model = null): EmbeddingsBuilder
     {
         $builder = new EmbeddingsBuilder;
@@ -170,9 +167,25 @@ class Magic
         return collect([
             ...Claude3Family::models(),
             ...Gpt4Family::models(),
+            ...GroqLlama3::models(),
             ...OpenRouter::models(),
             ...TogetherAI::models(),
         ])
             ->sortBy(fn ($name, $key) => $key);
+    }
+
+    public static function defaultModelName(): string
+    {
+        return config('llm-magic.llm.default');
+    }
+
+    public static  function defaultModelLabel(): string
+    {
+        return Magic::models()->get(Magic::defaultModelName()) ?? Magic::defaultModelName();
+    }
+
+    public static function defaultModel(): LLM
+    {
+        return ElElEm::fromString(self::defaultModelName());
     }
 }

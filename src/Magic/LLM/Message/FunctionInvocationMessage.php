@@ -45,7 +45,7 @@ class FunctionInvocationMessage implements DataMessage, PartialMessage
     public function text(): ?string
     {
         $arguments = collect($this->call->arguments)
-            ->map(fn ($value, $key) => "$key: $value")
+            ->map(fn ($value, $key) => "$key: " . json_encode($value))
             ->join(', ');
 
         return "{$this->call->name}($arguments)";

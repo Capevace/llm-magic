@@ -76,12 +76,16 @@ def save_image(doc, image, path):
     with open(path, "wb") as img_file:
         img_file.write(image_bytes)
 
-def save_pages_as_files(doc, pages_dir, full_text_path = None, contents_path = None, pages_txt_dir = None):
+def save_pages_as_files(doc, artifact_dir, pages_dir, images_dir = None, full_text_path = None, contents_path = None, pages_txt_dir = None):
+    pages = []
     texts = []
     contents = []
+    page_images = []
+    images = []
 
     for (page, pageIndex) in zip(doc, range(len(doc))):
-        image_path = pages_dir + f"/page{pageIndex + 1}.jpg"
+        page_images = []
+        page_image_path = pages_dir + f"/page{pageIndex + 1}.jpg"
 
         text = page.get_text().encode("utf8")
         texts.append(text)
@@ -94,9 +98,37 @@ def save_pages_as_files(doc, pages_dir, full_text_path = None, contents_path = N
 
         page = doc.load_page(pageIndex)
         pix = page.get_pixmap()
-        pix.save(image_path)
+        pix.save(page_image_path)
 
+        page_image = Image(page.number, 0, page_image_path, 0, 0, pix.width, pix.height)
+        page_images.append(page_image)
+
+        contents.append({"page": pageIndex + 1, "type": "page-image-marked", "mimetype": "image/jpeg", "path": "pages_marked/page" + str(pageIndex + 1) + ".jpg"})
         contents.append({"page": pageIndex + 1, "type": "page-image", "mimetype": "image/jpeg", "path": "pages/page" + str(pageIndex + 1) + ".jpg"})
+
+        if images_dir is not None:
+            img_list = page.get_images(full=True)
+            # filter width or height > 200
+
+            for image in img_list:
+                # select the image referencing the old image (hope you know how to identify it!)
+                # Each image looks like: (1315, 0, 1945, 1004, 8, 'DeviceRGB', '', 'Im1', 'DCTDecode', 0)
+                # first entry is xref, etc.
+                bbox = page.get_image_bbox(image)  # where the old image lives
+                number = len(images) + 1
+
+                image_path = images_dir + f"/image{number}.jpg"
+                save_image(doc, image, image_path)
+
+                relative_image_path = os.path.relpath(image_path, artifact_dir)
+                image = Image(page.number, number, relative_image_path, bbox.x0, bbox.y0, bbox.width, bbox.height)
+
+                if image.width > 200 or image.height > 200:
+                    page_images.append(image)
+                    images.append(image)
+                    contents.append({"page": pageIndex + 1, "type": "image", "mimetype": "image/jpeg", "path": image.path, "x": image.x, "y": image.y, "width": image.width, "height": image.height})
+
+        pages.append(Page(pageIndex + 1, text, page_images))
 
     # join texts with "---- Page X ----" header for each page with number of page replaced
     if full_text_path is not None:
@@ -116,6 +148,9 @@ def save_pages_as_files(doc, pages_dir, full_text_path = None, contents_path = N
         with open(contents_path, "w") as f:
             f.write(json.dumps(contents, indent=4))
 
+
+    return images
+
 # def resize_pages():
 #     pages_path = artifact_dir + f"/pages_marked/"
 #
@@ -125,28 +160,4 @@ def save_pages_as_files(doc, pages_dir, full_text_path = None, contents_path = N
 #         image.save(pages_path + page)
 
 def extract_pages(doc, images_dir):
-    images = []
-
-    pages = []
-    for (page, pageIndex) in zip(doc, range(len(doc))):
-        text = page.get_text().encode("utf8")
-        img_list = page.get_images(full=True)
-        page_images = []
-
-        for image in img_list:
-            # select the image referencing the old image (hope you know how to identify it!)
-            # Each image looks like: (1315, 0, 1945, 1004, 8, 'DeviceRGB', '', 'Im1', 'DCTDecode', 0)
-            # first entry is xref, etc.
-            bbox = page.get_image_bbox(image)  # where the old image lives
-            number = len(images) + 1
-
-            image_path = images_dir + f"/image{number}.jpg"
-            save_image(doc, image, image_path)
-
-            image = Image(page.number, number, image_path, bbox.x0, bbox.y0, bbox.width, bbox.height)
-            page_images.append(image)
-            images.append(image)
-
-        pages.append(Page(page.number, text, page_images))
-
-    return pages
+    return []

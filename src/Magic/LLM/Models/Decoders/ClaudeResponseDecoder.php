@@ -167,7 +167,7 @@ class ClaudeResponseDecoder implements Decoder
                     if ($part && $message instanceof PartialMessage) {
                         $message->append($part);
                     } else {
-                        Log::warning('Received content_block_delta without having started a partial message');
+                        Log::warning('Received content_block_delta without having started a partial message', ['data' => $data, 'message' => $message]);
                     }
 
                     if ($this->onMessageProgress) {

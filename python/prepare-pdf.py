@@ -147,25 +147,17 @@ def do_pdf(output):
         doc = fitz.open(pdf_path)
 
         # extract the pages (and save any images in the images dir)
-        pages = extract_pages(doc, images_dir)
+#         pages = extract_pages(doc, images_dir)
 
-        # flatten images
-        images = [image for page in pages for image in page.images]
+        images = save_pages_as_files(doc, artifact_dir, pages_dir=pages_dir, images_dir=images_dir, full_text_path=full_text_path, contents_path=contents_path, pages_txt_dir=pages_txt_dir)
 
-        # filter width or height > 200
-        filtered_images = [image for image in images if image.width > 200 and image.height > 200]
-
-        save_pages_as_files(doc, pages_dir=pages_dir, full_text_path=full_text_path, contents_path=contents_path, pages_txt_dir=pages_txt_dir)
-
-        draw_red_borders_around_images(doc, filtered_images)
+        draw_red_borders_around_images(doc, images)
 
         doc.save(marked_pdf_path)
 
-        save_pages_as_files(doc, pages_dir=pages_marked_dir)
+        save_pages_as_files(doc, artifact_dir, pages_dir=pages_marked_dir)
     except Exception as e:
         output.error = str(e)
-
-    output.pages = pages
 
     return output
 

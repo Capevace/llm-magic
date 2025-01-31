@@ -15,7 +15,6 @@ use ReflectionUnionType;
 
 class ToolProcessor
 {
-
     /**
      * @throws ReflectionException
      */

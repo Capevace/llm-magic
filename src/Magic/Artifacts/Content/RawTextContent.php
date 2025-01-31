@@ -2,7 +2,7 @@
 
 namespace Mateffy\Magic\Artifacts\Content;
 
-readonly class TextContent implements Content
+readonly class RawTextContent implements Content, TextualContent
 {
     public function __construct(
         public string $text,
@@ -26,5 +26,15 @@ readonly class TextContent implements Content
             embeds: $data['embeds'] ?? [],
             page: $data['page'] ?? null,
         );
+    }
+
+    public function text(): string
+    {
+        return $this->text;
+    }
+
+    public function getPage(): ?int
+    {
+        return $this->page;
     }
 }

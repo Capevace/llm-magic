@@ -2,8 +2,9 @@
 
 namespace Mateffy\Magic\Artifacts;
 
-use Mateffy\Magic\Artifacts\Content\ImageContent;
-use Mateffy\Magic\Artifacts\Content\TextContent;
+use Illuminate\Support\Collection;
+use Mateffy\Magic\Artifacts\Content\Content;
+use Mateffy\Magic\Artifacts\Content\EmbedContent;
 use Mateffy\Magic\LLM\Message\MultimodalMessage\Base64Image;
 
 /**
@@ -19,7 +20,7 @@ readonly class SplitArtifact implements Artifact
 {
     public function __construct(
         public Artifact $original,
-        /** @var array<TextContent|ImageContent> */
+        /** @var array<Content> */
         public array $contents,
         public int $tokens
     ) {}
@@ -27,16 +28,6 @@ readonly class SplitArtifact implements Artifact
     public function getMetadata(): ArtifactMetadata
     {
         return $this->original->getMetadata();
-    }
-
-    public function getSourcePath(): string
-    {
-        return $this->original->getSourcePath();
-    }
-
-    public function getSourceFilename(): string
-    {
-        return $this->original->getSourceFilename();
     }
 
     public function getContents(): array
@@ -49,14 +40,9 @@ readonly class SplitArtifact implements Artifact
         return $this->original->getText();
     }
 
-    public function getEmbedPath(string $filename): string
+    public function makeBase64Image(EmbedContent $content): Base64Image
     {
-        return $this->original->getEmbedPath($filename);
-    }
-
-    public function getBase64Image(ImageContent $filename): Base64Image
-    {
-        return $this->original->getBase64Image($filename);
+        return $this->original->makeBase64Image($content);
     }
 
     /**
@@ -68,5 +54,22 @@ readonly class SplitArtifact implements Artifact
     {
         // Splitting is not supported for split artifacts
         return [$this];
+    }
+
+    public function getBase64Images(?int $maxPages = null): Collection
+    {
+        return collect($this->getContents())
+            ->filter(fn (Content $content) => $content instanceof EmbedContent)
+            ->groupBy(fn (EmbedContent $content) => $content->getPage() ?? 0)
+            ->sortBy(fn (Collection $contents, $page) => $page)
+            ->take($maxPages)
+            ->flatMap(fn (Collection $contents) => collect($contents)
+                ->map(fn (EmbedContent $image) => $this->makeBase64Image($image))
+            );
+    }
+
+    public function getEmbedContents(EmbedContent $content): mixed
+    {
+        return $this->original->getEmbedContents($content);
     }
 }

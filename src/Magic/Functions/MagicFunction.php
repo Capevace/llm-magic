@@ -4,6 +4,7 @@ namespace Mateffy\Magic\Functions;
 
 use Closure;
 use Illuminate\Container\Container;
+use Mateffy\Magic\Functions\Concerns\ToolProcessor;
 use Mateffy\Magic\LLM\Message\FunctionCall;
 use Mateffy\Magic\LLM\Message\FunctionOutputMessage;
 use Mateffy\Magic\Loop\EndConversation;

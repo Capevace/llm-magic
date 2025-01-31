@@ -99,7 +99,7 @@ class Claude3Family extends ElElEm
         );
     }
 
-    public static function models(?string $prefix = null, ?string $prefixLabels = 'Claude API'): Collection
+    public static function models(?string $prefix = 'anthropic', ?string $prefixLabels = 'Claude API'): Collection
     {
         return static::prefixModels([
             static::HAIKU => 'Claude 3 Haiku',

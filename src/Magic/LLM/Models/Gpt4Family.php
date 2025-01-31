@@ -34,8 +34,8 @@ class Gpt4Family extends ElElEm
     public static function models(?string $prefix = 'openai', ?string $prefixLabels = 'OpenAI API'): Collection
     {
         return static::prefixModels([
-            'o1-preview-2024-09-12' => 'GPT-o1 Preview',
-            'gpt-o1-mini' => 'GPT-o1 Mini',
+            'o1-preview' => 'GPT-o1 Preview',
+            'o1-mini' => 'GPT-o1 Mini',
             'gpt-4-turbo' => 'GPT-4 Turbo',
             'gpt-4o' => 'GPT-4o',
             'gpt-4o-mini' => 'GPT-4o Mini',

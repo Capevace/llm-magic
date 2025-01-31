@@ -2,25 +2,24 @@
 
 namespace Mateffy\Magic\Artifacts;
 
-use Mateffy\Magic\Artifacts\Content\ImageContent;
-use Mateffy\Magic\Artifacts\Content\TextContent;
+use Illuminate\Support\Collection;
+use Mateffy\Magic\Artifacts\Content\Content;
+use Mateffy\Magic\Artifacts\Content\EmbedContent;
 use Mateffy\Magic\LLM\Message\MultimodalMessage\Base64Image;
 
 interface Artifact
 {
+    public function getMetadata(): ArtifactMetadata;
+
     /**
-     * @return array<TextContent|ImageContent>
+     * @return array<Content>
      */
     public function getContents(): array;
 
     public function getText(): ?string;
-
-    public function getMetadata(): ArtifactMetadata;
-
-    public function getSourcePath(): string;
-
-    public function getEmbedPath(string $filename): string;
-    public function getBase64Image(ImageContent $filename): Base64Image;
+    public function getBase64Images(?int $maxPages = null): Collection;
+    public function getEmbedContents(EmbedContent $content): mixed;
+    public function makeBase64Image(EmbedContent $content): Base64Image;
 
     /**
      * @return {0: array<Artifact>, 1: int}

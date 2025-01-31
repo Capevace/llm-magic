@@ -5,6 +5,7 @@ namespace Mateffy\Magic\Strategies;
 use App\Models\Actor\ActorTelemetry;
 use Illuminate\Support\Facades\Log;
 use Mateffy\Magic\Artifacts\Artifact;
+use Mateffy\Magic\Artifacts\SplitArtifact;
 use Mateffy\Magic\Config\Extractor;
 use Mateffy\Magic\LLM\Message\DataMessage;
 use Mateffy\Magic\LLM\Message\Message;
@@ -47,29 +48,29 @@ class ParallelStrategy
      */
     public function run(array $artifacts): array
     {
-        $maxTokens = 20000;
+        $maxChunkTokens = 10000;
+        $maxBatchTokens = 30000;
 
-        /** @var Collection<Collection<Artifact>> $batches */
-        $batches = collect();
-
-        /** @var Collection<Artifact> $batch */
-        $batch = collect();
-        $batchTokens = 0;
+        /** @var Collection<SplitArtifact> $chunks */
+        $chunks = collect();
 
         foreach ($artifacts as $artifact) {
-            [$splitArtifacts, $tokensUsed] = $artifact->split($maxTokens);
+            [$splitArtifacts, $tokensUsed] = $artifact->split($maxChunkTokens);
 
-            while (count($splitArtifacts) > 0) {
-                $artifact = array_shift($splitArtifacts);
+            $chunks = $chunks->concat($splitArtifacts);
+        }
 
-                if ($batch->isNotEmpty() && $batchTokens + $artifact->tokens > $maxTokens) {
-                    $batches->push($batch);
-                    $batch = collect();
-                    $batchTokens = 0;
-                }
 
-                $batch->push($artifact);
-                $batchTokens += $artifact->tokens;
+        /** @var Collection<Collection<SplitArtifact>> $batches */
+        $batches = collect();
+        $batch = collect();
+
+        foreach ($chunks as $splitArtifact) {
+            $batch->push($splitArtifact);
+
+            if ($batch->sum(fn (SplitArtifact $artifact) => $artifact->tokens) > $maxBatchTokens) {
+                $batches->push($batch);
+                $batch = collect();
             }
         }
 

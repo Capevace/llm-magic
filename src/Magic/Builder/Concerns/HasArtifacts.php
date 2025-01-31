@@ -3,20 +3,20 @@
 namespace Mateffy\Magic\Builder\Concerns;
 
 use Mateffy\Magic\Artifacts\Artifact;
-use Mateffy\Magic\Artifacts\LocalArtifact;
+use Mateffy\Magic\Artifacts\FileArtifact;
 
 trait HasArtifacts
 {
     /** @var Artifact[] */
     protected array $artifacts = [];
 
-    public function file(string $path, bool $replace = false): static
+    public function file(string $path, ?string $disk = null, bool $replace = false): static
     {
         if ($replace) {
             $this->artifacts = [];
         }
 
-        $this->artifacts[] = LocalArtifact::fromPath($path);
+        $this->artifacts[] = FileArtifact::from(path: $path, disk: $disk);
 
         return $this;
     }
