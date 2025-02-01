@@ -105,7 +105,7 @@ trait UsesGroqApi
      * @throws RateLimitExceeded
      * @throws UnknownInferenceException
      */
-    public function stream(Prompt $prompt, ?Closure $onMessageProgress = null, ?Closure $onMessage = null, ?Closure $onTokenStats = null): array
+    public function stream(Prompt $prompt, ?Closure $onMessageProgress = null, ?Closure $onMessage = null, ?Closure $onTokenStats = null, ?Closure $onDataPacket = null): array
     {
         $response = $this->createStreamedHttpRequest($prompt);
 

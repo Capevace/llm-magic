@@ -22,6 +22,7 @@ class ResponseDecoder implements Decoder
         protected CreateResponse|StreamResponse $response,
         protected ?\Closure $onMessageProgress = null,
         protected ?\Closure $onMessage = null,
+		protected ?\Closure $onDataPacket = null,
         protected ?\Closure $onTokenStats = null,
         protected bool $json = true,
     ) {}

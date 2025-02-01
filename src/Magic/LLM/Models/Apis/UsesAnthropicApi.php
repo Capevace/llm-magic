@@ -193,7 +193,7 @@ trait UsesAnthropicApi
         }
     }
 
-    public function stream(Prompt $prompt, ?Closure $onMessageProgress = null, ?Closure $onMessage = null, ?Closure $onTokenStats = null): MessageCollection
+    public function stream(Prompt $prompt, ?Closure $onMessageProgress = null, ?Closure $onMessage = null, ?Closure $onTokenStats = null, ?Closure $onDataPacket = null): MessageCollection
     {
         $stream = $this->createStreamedHttpRequest($prompt);
 
@@ -203,6 +203,7 @@ trait UsesAnthropicApi
             $stream,
             $onMessageProgress,
             $onMessage,
+			$onDataPacket,
             onTokenStats: fn (TokenStats $stats) => $onTokenStats
                 ? $onTokenStats($cost
                     ? $stats->withCost($cost)

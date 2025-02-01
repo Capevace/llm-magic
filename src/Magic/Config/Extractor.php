@@ -21,9 +21,9 @@ readonly class Extractor implements ModelLaunchInterface
         public string $strategy,
     ) {}
 
-    public function stream(Prompt $prompt, ?Closure $onMessageProgress = null, ?Closure $onMessage = null, ?Closure $onTokenStats = null): MessageCollection
+    public function stream(Prompt $prompt, ?Closure $onMessageProgress = null, ?Closure $onMessage = null, ?Closure $onTokenStats = null, ?Closure $onDataPacket = null): MessageCollection
     {
-        return $this->llm->stream($prompt, $onMessageProgress, $onMessage, $onTokenStats);
+        return $this->llm->stream($prompt, $onMessageProgress, $onMessage, $onTokenStats, $onDataPacket);
     }
 
     public function send(Prompt $prompt): MessageCollection

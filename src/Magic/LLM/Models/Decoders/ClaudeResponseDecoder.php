@@ -40,6 +40,11 @@ class ClaudeResponseDecoder implements Decoder
          */
         protected ?\Closure $onMessage = null,
 
+		/**
+		 * @var \Closure(array): void
+		 */
+		protected ?\Closure $onDataPacket = null,
+
         /**
          * @var \Closure(TokenStats): void
          */
@@ -65,6 +70,10 @@ class ClaudeResponseDecoder implements Decoder
 
         while (! $this->response->eof()) {
             $output = $this->response->read(self::CHUNK_SIZE);
+
+			if ($this->onDataPacket) {
+				($this->onDataPacket)(['data' => $output]);
+			}
 
             if ($unfinished !== null) {
                 $output = $unfinished.$output;

@@ -43,7 +43,7 @@ trait UsesOpenAiApi
     /**
      * @throws UnknownInferenceException
      */
-    public function stream(Prompt $prompt, ?Closure $onMessageProgress = null, ?Closure $onMessage = null, ?Closure $onTokenStats = null): MessageCollection
+    public function stream(Prompt $prompt, ?Closure $onMessageProgress = null, ?Closure $onMessage = null, ?Closure $onTokenStats = null, ?Closure $onDataPacket = null): MessageCollection
     {
         $messages = collect($prompt->messages())
             ->flatMap(callback: fn (Message $message) => match ($message::class) {
@@ -215,6 +215,7 @@ trait UsesOpenAiApi
                 $stream,
                 $onMessageProgress,
                 $onMessage,
+				$onDataPacket,
                 onTokenStats: fn (TokenStats $stats) => $onTokenStats
                     ? $onTokenStats($cost
                         ? $stats->withCost($cost)

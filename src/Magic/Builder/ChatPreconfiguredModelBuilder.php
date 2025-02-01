@@ -3,6 +3,7 @@
 namespace Mateffy\Magic\Builder;
 
 use Mateffy\Magic\Builder\Concerns\HasArtifacts;
+use Mateffy\Magic\Builder\Concerns\HasDebugger;
 use Mateffy\Magic\Builder\Concerns\HasMessages;
 use Mateffy\Magic\Builder\Concerns\HasModel;
 use Mateffy\Magic\Builder\Concerns\HasMessageCallbacks;
@@ -24,6 +25,7 @@ use Mateffy\Magic\Prompt\Prompt;
 class ChatPreconfiguredModelBuilder
 {
     use HasArtifacts;
+	use HasDebugger;
     use HasMessages;
     use HasModel;
     use HasMessageCallbacks;
@@ -107,14 +109,62 @@ class ChatPreconfiguredModelBuilder
 
     public function stream(): MessageCollection
     {
+		$self = $this;
         $prompt = $this->build();
+		$debugger = $this->getDebugger();
 
-        $messages = $this->model->stream(
-            prompt: $prompt,
-            onMessageProgress: $this->onMessageProgress,
-            onMessage: $this->onMessage,
-            onTokenStats: $this->onTokenStats
-        );
+        if ($debugger) {
+            $debugger->onMessage(TextMessage::user($prompt->system()));
+
+            foreach ($prompt->messages() as $message) {
+                $debugger->onMessage($message);
+            }
+        }
+
+        $messages = $this->model
+			->stream(
+				prompt: $prompt,
+				onMessageProgress: function () use ($self, $debugger) {
+					$args = func_get_args();
+
+					if ($debugger) {
+						$debugger->onMessageProgress(...$args);
+					}
+
+					if ($self->onMessageProgress) {
+						($self->onMessageProgress)(...$args);
+					}
+				},
+				onMessage: function () use ($self, $debugger) {
+					$args = func_get_args();
+
+					if ($debugger) {
+						$debugger->onMessage(...$args);
+					}
+
+					if ($self->onMessage) {
+						($self->onMessage)(...$args);
+					}
+				},
+				onTokenStats: function () use ($self, $debugger) {
+					$args = func_get_args();
+
+					if ($debugger) {
+						$debugger->onTokenStats(...$args);
+					}
+
+					if ($self->onTokenStats) {
+						($self->onTokenStats)(...$args);
+					}
+				},
+				onDataPacket: function () use ($self, $debugger) {
+					$args = func_get_args();
+
+					if ($debugger) {
+						$debugger->onDataPacket(...$args);
+					}
+				},
+			);
 
         return $this->handleMessages($messages);
     }

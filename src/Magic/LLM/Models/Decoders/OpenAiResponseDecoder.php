@@ -45,6 +45,11 @@ class OpenAiResponseDecoder implements Decoder
          */
         protected ?\Closure $onMessage = null,
 
+		/**
+		 * @var \Closure(array): void
+		 */
+		protected ?\Closure $onDataPacket = null,
+
         /**
          * @var \Closure(TokenStats): void
          */
@@ -86,6 +91,10 @@ class OpenAiResponseDecoder implements Decoder
              * @var CreateStreamedResponse $response
              */
             foreach ($response->choices as $choice) {
+				if ($this->onDataPacket) {
+					($this->onDataPacket)($choice->toArray());
+				}
+
                 $delta = $choice->delta;
                 $choices[] = $delta;
 

@@ -68,7 +68,7 @@ trait UsesAwsBedrockApi
         $bedrockClient->converseStreamAsync($config);
     }
 
-    public function stream(Prompt $prompt, ?Closure $onMessageProgress = null, ?Closure $onMessage = null, ?Closure $onTokenStats = null): array
+    public function stream(Prompt $prompt, ?Closure $onMessageProgress = null, ?Closure $onMessage = null, ?Closure $onTokenStats = null, ?Closure $onDataPacket = null): array
     {
         $stream = $this->createStreamedHttpRequest($prompt);
 
@@ -78,6 +78,7 @@ trait UsesAwsBedrockApi
             $stream,
             $onMessageProgress,
             $onMessage,
+			$onDataPacket,
             onTokenStats: fn (TokenStats $stats) => $onTokenStats($cost
                     ? $stats->withCost($cost)
                     : $stats
