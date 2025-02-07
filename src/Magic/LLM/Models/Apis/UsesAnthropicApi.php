@@ -182,6 +182,10 @@ trait UsesAnthropicApi
                     throw new TooManyTokensForModelRequested('Too many tokens: '.Arr::get($data, 'error.message'), previous: $e);
                 }
 
+				if ($type === 'invalid_request_error' && Str::startsWith(Arr::get($data, 'error.message'), 'Your credit balance is too low')) {
+					throw new InvalidRequest('API error', Arr::get($data, 'error.message'), previous: $e);
+				}
+
                 if ($message = Arr::get($data, 'error.message')) {
                     throw new InvalidRequest('API error', $message, previous: $e);
                 }
