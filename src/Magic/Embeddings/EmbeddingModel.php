@@ -4,8 +4,8 @@ namespace Mateffy\Magic\Embeddings;
 
 
 use Illuminate\Support\Str;
-use Mateffy\Magic\Config\Organization;
-use Mateffy\Magic\LLM\ModelCost;
+use Mateffy\Magic\Models\ModelCost;
+use Mateffy\Magic\Models\Options\Organization;
 
 abstract readonly class EmbeddingModel
 {
@@ -22,10 +22,10 @@ abstract readonly class EmbeddingModel
 
         return match ($organization) {
             'openai' => match ($model) {
-                OpenAIEmbeddingModel::TEXT_EMBEDDING_ADA_002 => OpenAIEmbeddingModel::text_ada_002(),
-                OpenAIEmbeddingModel::TEXT_EMBEDDING_3_LARGE => OpenAIEmbeddingModel::text_3_large(),
-                OpenAIEmbeddingModel::TEXT_EMBEDDING_3_SMALL => OpenAIEmbeddingModel::text_3_small(),
-                default => new OpenAIEmbeddingModel(model: $model),
+                OpenAIEmbeddings::TEXT_EMBEDDING_ADA_002 => OpenAIEmbeddings::text_ada_002(),
+                OpenAIEmbeddings::TEXT_EMBEDDING_3_LARGE => OpenAIEmbeddings::text_3_large(),
+                OpenAIEmbeddings::TEXT_EMBEDDING_3_SMALL => OpenAIEmbeddings::text_3_small(),
+                default => new OpenAIEmbeddings(model: $model),
             },
             default => throw new \InvalidArgumentException("Unsupported organization: {$value}"),
         };

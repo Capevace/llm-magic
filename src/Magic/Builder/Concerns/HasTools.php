@@ -3,25 +3,18 @@
 namespace Mateffy\Magic\Builder\Concerns;
 
 use Closure;
-use Mateffy\Magic\Functions\Concerns\ToolProcessor;
-use Mateffy\Magic\Functions\InvokableFunction;
-use Mateffy\Magic\Functions\MagicFunction;
-use Mateffy\Magic\LLM\Message\FunctionCall;
-use Mateffy\Magic\Prompt\Reflection\ReflectionSchema;
-use ReflectionClass;
+use Mateffy\Magic\Chat\Messages\FunctionCall;
+use Mateffy\Magic\Chat\ToolChoice;
+use Mateffy\Magic\Tools\InvokableTool;
+use Mateffy\Magic\Tools\ToolProcessor;
 use ReflectionException;
-use ReflectionFunction;
-use ReflectionFunctionAbstract;
-use ReflectionNamedType;
-use ReflectionParameter;
-use ReflectionUnionType;
 use Throwable;
 
 trait HasTools
 {
     public array $tools = [];
 
-    public ?string $toolChoice = null;
+    public ToolChoice|string $toolChoice = ToolChoice::Auto;
 
     /**
      * @var Closure(Throwable): void|null $onToolError
@@ -55,7 +48,7 @@ trait HasTools
         $processedTools = [];
 
         foreach ($tools as $key => $tool) {
-            if ($tool instanceof InvokableFunction) {
+            if ($tool instanceof InvokableTool) {
                 if (is_numeric($key)) {
                     $key = $tool->name();
                 }
@@ -81,7 +74,14 @@ trait HasTools
         return $this;
     }
 
-    public function toolChoice(?string $name = 'auto'): static
+    public function toolChoice(ToolChoice|string $name = ToolChoice::Auto): static
+    {
+        $this->toolChoice = $name;
+
+        return $this;
+    }
+
+	public function forceTool(ToolChoice|string $name = ToolChoice::Required): static
     {
         $this->toolChoice = $name;
 

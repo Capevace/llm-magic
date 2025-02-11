@@ -2,7 +2,7 @@
 
 namespace Mateffy\Magic\Builder\Concerns;
 
-use Mateffy\Magic\Debug\FileDebugger;
+use Mateffy\Magic\Support\FileDebugger;
 
 trait HasDebugger
 {

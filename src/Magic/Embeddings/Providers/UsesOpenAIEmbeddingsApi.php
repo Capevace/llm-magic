@@ -3,19 +3,25 @@
 namespace Mateffy\Magic\Embeddings\Providers;
 
 use Closure;
+use Mateffy\Magic\Chat\TokenStats;
 use Mateffy\Magic\Embeddings\EmbeddedData;
-use Mateffy\Magic\Prompt\TokenStats;
-use OpenAI\Laravel\Facades\OpenAI;
+use OpenAI;
 
 trait UsesOpenAIEmbeddingsApi
 {
     public function get(string $input, ?Closure $onTokenStats = null): EmbeddedData
     {
-        $response = OpenAI::embeddings()
-            ->create([
-                'model' => $this->model,
-                'input' => $input,
-            ]);
+        $client = OpenAI::client(
+			apiKey: config('llm-magic.apis.openai.token'),
+			organization: config('llm-magic.apis.openai.organization_id')
+		);
+
+		$response = $client
+			->embeddings()
+			->create([
+				'model' => $this->model,
+				'input' => $input,
+			]);
 
         if ($response->usage && $onTokenStats) {
             $onTokenStats(new TokenStats(

@@ -4,8 +4,6 @@ namespace Mateffy\Magic\Builder\Concerns;
 
 use App\Models\Actor\ActorTelemetry;
 use Closure;
-use Mateffy\Magic\LLM\Message\Message;
-use Mateffy\Magic\Prompt\TokenStats;
 
 trait HasExtractionModelCallbacks
 {

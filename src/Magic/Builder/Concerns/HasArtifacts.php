@@ -2,8 +2,8 @@
 
 namespace Mateffy\Magic\Builder\Concerns;
 
-use Mateffy\Magic\Artifacts\Artifact;
-use Mateffy\Magic\Artifacts\FileArtifact;
+use Mateffy\Magic\Extraction\Artifact;
+use Mateffy\Magic\Extraction\DiskArtifact;
 
 trait HasArtifacts
 {
@@ -16,7 +16,7 @@ trait HasArtifacts
             $this->artifacts = [];
         }
 
-        $this->artifacts[] = FileArtifact::from(path: $path, disk: $disk);
+        $this->artifacts[] = DiskArtifact::from(path: $path, disk: $disk);
 
         return $this;
     }

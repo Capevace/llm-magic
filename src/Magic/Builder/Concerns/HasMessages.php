@@ -2,7 +2,7 @@
 
 namespace Mateffy\Magic\Builder\Concerns;
 
-use Mateffy\Magic\LLM\Message\Message;
+use Mateffy\Magic\Chat\Messages\Message;
 
 trait HasMessages
 {

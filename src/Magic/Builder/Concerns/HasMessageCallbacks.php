@@ -3,8 +3,7 @@
 namespace Mateffy\Magic\Builder\Concerns;
 
 use Closure;
-use Mateffy\Magic\LLM\Message\Message;
-use Mateffy\Magic\Prompt\TokenStats;
+use Mateffy\Magic\Chat\Messages\Message;
 
 trait HasMessageCallbacks
 {

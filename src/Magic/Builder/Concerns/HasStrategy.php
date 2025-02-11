@@ -2,10 +2,10 @@
 
 namespace Mateffy\Magic\Builder\Concerns;
 
-use Mateffy\Magic\Strategies\ParallelStrategy;
-use Mateffy\Magic\Strategies\SequentialStrategy;
-use Mateffy\Magic\Strategies\SimpleStrategy;
-use Mateffy\Magic\Strategies\Strategy;
+use Mateffy\Magic\Extraction\Strategies\ParallelStrategy;
+use Mateffy\Magic\Extraction\Strategies\SequentialStrategy;
+use Mateffy\Magic\Extraction\Strategies\SimpleStrategy;
+use Mateffy\Magic\Extraction\Strategy;
 
 trait HasStrategy
 {

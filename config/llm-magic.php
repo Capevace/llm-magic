@@ -1,20 +1,24 @@
 <?php
 
+$builtin_default = 'openai/gpt-4o-mini';
+$builtin_cheap = 'openai/gpt-4o-mini';
+$builtin_default_embeddings = 'openai/' . \Mateffy\Magic\Embeddings\OpenAIEmbeddings::TEXT_EMBEDDING_3_SMALL;
+
 return [
-    'llm' => [
-        'default' => 'anthropic/claude-3-haiku',
-//        'default' => 'groq/llama-3.3-70b-versatile',
+	'llm' => [
+        'default' => env('LLM_MAGIC_MODEL', $builtin_default),
+    ],
+    'models' => [
+        'default' => env('LLM_MAGIC_MODEL', $builtin_default),
+		'cheap' => env('LLM_MAGIC_CHEAP_MODEL', $builtin_cheap),
+		'extraction' => env('LLM_MAGIC_EXTRACTION_MODEL', null),
+		'chat' => env('LLM_MAGIC_CHAT_MODEL', null),
+		'embeddings' => env('LLM_MAGIC_EMBEDDINGS_MODEL', $builtin_default_embeddings),
     ],
     'artifacts' => [
         'base' => env('LLM_MAGIC_ARTIFACTS_BASE', storage_path('app/magic-artifacts')),
         'disk' => env('LLM_MAGIC_ARTIFACTS_DISK', 'artifacts'),
         'prefix' => env('LLM_MAGIC_ARTIFACTS_PREFIX', ''),
-    ],
-    'python' => [
-        'uv' => [
-            'path' => env('LLM_MAGIC_UV_PATH', '/usr/bin/env uv'),
-        ],
-        'cwd' => env('LLM_MAGIC_PYTHON_CWD', realpath(__DIR__ . '/../python')),
     ],
     'apis' => [
         'anthropic' => [
@@ -34,6 +38,12 @@ return [
         'togetherai' => [
             'token' => env('TOGETHERAI_API_KEY'),
         ],
+		'gemini' => [
+			'token' => env('GEMINI_API_KEY'),
+		],
+		'deepseek' => [
+			'token' => env('DEEPSEEK_API_KEY'),
+		]
     ],
 
     'extractors' => [

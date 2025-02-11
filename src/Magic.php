@@ -7,21 +7,21 @@ use Illuminate\Support\Collection;
 use Mateffy\Magic\Builder\ChatPreconfiguredModelBuilder;
 use Mateffy\Magic\Builder\EmbeddingsBuilder;
 use Mateffy\Magic\Builder\ExtractionLLMBuilder;
-use Mateffy\Magic\Embeddings\OpenAIEmbeddingModel;
-use Mateffy\Magic\Functions\Exceptions\ToolCallException;
-use Mateffy\Magic\Functions\MagicReturnFunction;
-use Mateffy\Magic\LLM\ElElEm;
-use Mateffy\Magic\LLM\Exceptions\UnableToActAsFunction;
-use Mateffy\Magic\LLM\Exceptions\UnknownInferenceException;
-use Mateffy\Magic\LLM\LLM;
-use Mateffy\Magic\LLM\Message\TextMessage;
-use Mateffy\Magic\LLM\Models\Claude3Family;
-use Mateffy\Magic\LLM\Models\Gpt4Family;
-use Mateffy\Magic\LLM\Models\GroqLlama3;
-use Mateffy\Magic\LLM\Models\OpenRouter;
-use Mateffy\Magic\LLM\Models\TogetherAI;
-use Mateffy\Magic\Loop\EndConversation;
+use Mateffy\Magic\Chat\Messages\TextMessage;
+use Mateffy\Magic\Chat\Signals\EndConversation;
+use Mateffy\Magic\Embeddings\OpenAIEmbeddings;
+use Mateffy\Magic\Exceptions\ToolCallException;
+use Mateffy\Magic\Exceptions\UnableToActAsFunction;
+use Mateffy\Magic\Exceptions\UnknownInferenceException;
 use Mateffy\Magic\Memory\MagicMemory;
+use Mateffy\Magic\Models\Anthropic;
+use Mateffy\Magic\Models\ElElEm;
+use Mateffy\Magic\Models\Gemini;
+use Mateffy\Magic\Models\LLM;
+use Mateffy\Magic\Models\OpenAI;
+use Mateffy\Magic\Models\OpenRouter;
+use Mateffy\Magic\Models\TogetherAI;
+use Mateffy\Magic\Tools\Prebuilt\MagicReturnTool;
 use ReflectionException;
 use Throwable;
 
@@ -76,7 +76,7 @@ class Magic
                 TextMessage::user($prompt)
             ])
             ->tools([
-                'extract' => new Magic\Functions\Extract([
+                'extract' => new Magic\Tools\Prebuilt\Extract([
                     'type' => 'object',
                     'properties' => [
                         'returnValue' => $schema
@@ -117,7 +117,7 @@ class Magic
             If the task you are given is not possible for you to do or answer, you can call the `fail` function with an error message.
             PROMPT)
             ->tools([
-                'returnValue' => new MagicReturnFunction($type, $schema),
+                'returnValue' => new MagicReturnTool($type, $schema),
                 'fail' => fn (string $error) => Magic::end($error),
             ])
             ->messages([
@@ -142,7 +142,7 @@ class Magic
         return new MagicMemory;
     }
 
-    public static function embeddings(Closure|string|null $input = null, ?OpenAIEmbeddingModel $model = null): EmbeddingsBuilder
+    public static function embeddings(Closure|string|null $input = null, ?OpenAIEmbeddings $model = null): EmbeddingsBuilder
     {
         $builder = new EmbeddingsBuilder;
 
@@ -165,10 +165,10 @@ class Magic
     public static function models(): Collection
     {
         return collect([
-            ...Claude3Family::models(),
-            ...Gpt4Family::models(),
-            ...GroqLlama3::models(),
-            ...OpenRouter::models(),
+            ...Anthropic::models(),
+            ...OpenAI::models(),
+			...Gemini::models(),
+			...OpenRouter::models(),
             ...TogetherAI::models(),
         ])
             ->sortBy(fn ($name, $key) => $key);

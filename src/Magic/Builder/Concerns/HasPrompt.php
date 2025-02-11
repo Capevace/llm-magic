@@ -2,7 +2,7 @@
 
 namespace Mateffy\Magic\Builder\Concerns;
 
-use Mateffy\Magic\Prompt\Prompt;
+use Mateffy\Magic\Chat\Prompt;
 
 trait HasPrompt
 {

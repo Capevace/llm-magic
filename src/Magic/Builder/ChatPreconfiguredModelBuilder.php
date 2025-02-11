@@ -4,23 +4,23 @@ namespace Mateffy\Magic\Builder;
 
 use Mateffy\Magic\Builder\Concerns\HasArtifacts;
 use Mateffy\Magic\Builder\Concerns\HasDebugger;
+use Mateffy\Magic\Builder\Concerns\HasMessageCallbacks;
 use Mateffy\Magic\Builder\Concerns\HasMessages;
 use Mateffy\Magic\Builder\Concerns\HasModel;
-use Mateffy\Magic\Builder\Concerns\HasMessageCallbacks;
 use Mateffy\Magic\Builder\Concerns\HasPrompt;
 use Mateffy\Magic\Builder\Concerns\HasSchema;
 use Mateffy\Magic\Builder\Concerns\HasSystemPrompt;
 use Mateffy\Magic\Builder\Concerns\HasTokenCallback;
 use Mateffy\Magic\Builder\Concerns\HasTools;
-use Mateffy\Magic\Functions\InvokableFunction;
-use Mateffy\Magic\LLM\Message\FunctionInvocationMessage;
-use Mateffy\Magic\LLM\Message\FunctionOutputMessage;
-use Mateffy\Magic\LLM\Message\Message;
-use Mateffy\Magic\LLM\Message\MultimodalMessage;
-use Mateffy\Magic\LLM\Message\TextMessage;
-use Mateffy\Magic\LLM\MessageCollection;
-use Mateffy\Magic\Loop\EndConversation;
-use Mateffy\Magic\Prompt\Prompt;
+use Mateffy\Magic\Chat\MessageCollection;
+use Mateffy\Magic\Chat\Messages\FunctionInvocationMessage;
+use Mateffy\Magic\Chat\Messages\FunctionOutputMessage;
+use Mateffy\Magic\Chat\Messages\MultimodalMessage;
+use Mateffy\Magic\Chat\Messages\TextMessage;
+use Mateffy\Magic\Chat\Signals\EndConversation;
+use Mateffy\Magic\Chat\ToolChoice;
+use Mateffy\Magic\Chat\Prompt;
+use Mateffy\Magic\Tools\InvokableTool;
 
 class ChatPreconfiguredModelBuilder
 {
@@ -72,7 +72,7 @@ class ChatPreconfiguredModelBuilder
                     $role = $message->role;
                     $current[] = match($message::class) {
                         TextMessage::class => MultimodalMessage\Text::make($message->content),
-                        FunctionInvocationMessage::class => MultimodalMessage\ToolUse::call($message->call),
+                        FunctionInvocationMessage::class => \Mateffy\Magic\Chat\Messages\MultimodalMessage\ToolUse::call($message->call),
                         FunctionOutputMessage::class => MultimodalMessage\ToolResult::output($message->call, $message->output),
                     };
                 }
@@ -86,12 +86,12 @@ class ChatPreconfiguredModelBuilder
                 return $messages->all();
             }
 
-            public function functions(): array
+            public function tools(): array
             {
                 return array_values($this->builder->tools);
             }
 
-            public function forceFunction(): ?InvokableFunction
+            public function forceFunction(): ?InvokableTool
             {
                 if (!$this->builder->toolChoice) {
                     return null;
@@ -104,7 +104,12 @@ class ChatPreconfiguredModelBuilder
             {
                 return false;
             }
-        };
+
+			public function toolChoice(): ToolChoice|string
+			{
+				return $this->builder->toolChoice;
+			}
+		};
     }
 
     public function stream(): MessageCollection
@@ -185,7 +190,7 @@ class ChatPreconfiguredModelBuilder
 
             if ($message instanceof FunctionInvocationMessage) {
                 if ($fn = $this->tools[$message->call->name] ?? null) {
-                    /** @var InvokableFunction $fn */
+                    /** @var InvokableTool $fn */
 
                     $message->call->arguments = $fn->validate($message->call->arguments);
 
