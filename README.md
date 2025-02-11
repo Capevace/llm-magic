@@ -1,7 +1,7 @@
 # `@mateffy/llm-magic`
 
 > [!NOTE]
-> This project is still in development and not yet publicly released.
+> This project is still in development and not yet publicly released. API will change!
 
 A PHP SDK to do magical things with LLMs using just a few lines of code.
 Also enables developer-friendly extraction of structured and validated JSON data from files such as PDFs, Word documents, and images.
