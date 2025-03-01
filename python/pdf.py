@@ -72,9 +72,17 @@ def save_image(doc, image, path):
     base_image = doc.extract_image(xref)
     image_bytes = base_image["image"]
 
+    # Check that the bytes are at least 200 bytes long, otherwise it's probably a corrupted image.
+    # This is based on experience and can be adjusted/improved with proper corruption detection.
+    # But for now, this is a simple and effective way to filter out corrupted images.
+    if len(image_bytes) < 200:
+        return False
+
     # you can save the image to disk with open()
     with open(path, "wb") as img_file:
         img_file.write(image_bytes)
+
+    return True
 
 def save_pages_as_files(doc, artifact_dir, pages_dir, images_dir = None, full_text_path = None, contents_path = None, pages_txt_dir = None):
     pages = []
@@ -108,17 +116,18 @@ def save_pages_as_files(doc, artifact_dir, pages_dir, images_dir = None, full_te
 
         if images_dir is not None:
             img_list = page.get_images(full=True)
-            # filter width or height > 200
 
             for image in img_list:
-                # select the image referencing the old image (hope you know how to identify it!)
-                # Each image looks like: (1315, 0, 1945, 1004, 8, 'DeviceRGB', '', 'Im1', 'DCTDecode', 0)
-                # first entry is xref, etc.
-                bbox = page.get_image_bbox(image)  # where the old image lives
+                bbox = page.get_image_bbox(image)
                 number = len(images) + 1
 
                 image_path = images_dir + f"/image{number}.jpg"
-                save_image(doc, image, image_path)
+                success = save_image(doc, image, image_path)
+
+                # if image is not saved, skip.
+                # this can happen for corrupted images
+                if not success:
+                    continue
 
                 relative_image_path = os.path.relpath(image_path, artifact_dir)
                 image = Image(page.number, number, relative_image_path, bbox.x0, bbox.y0, bbox.width, bbox.height)

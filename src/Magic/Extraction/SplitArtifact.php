@@ -21,8 +21,8 @@ readonly class SplitArtifact implements Artifact
 {
     public function __construct(
         public Artifact $original,
-        /** @var array<Slice> */
-        public array $contents,
+        /** @var Collection<Slice> */
+        public Collection $contents,
         public int $tokens
     ) {}
 
@@ -31,9 +31,9 @@ readonly class SplitArtifact implements Artifact
         return $this->original->getMetadata();
     }
 
-    public function getContents(): array
+    public function getContents(?ContextOptions $filter = null): Collection
     {
-        return $this->contents;
+        return $filter?->filter($this->contents) ?? $this->contents;
     }
 
     public function getText(): ?string
@@ -57,20 +57,8 @@ readonly class SplitArtifact implements Artifact
         return [$this];
     }
 
-    public function getBase64Images(?int $maxPages = null): Collection
+    public function getRawEmbedContents(EmbedSlice $content): mixed
     {
-        return collect($this->getContents())
-            ->filter(fn (Slice $content) => $content instanceof EmbedSlice)
-            ->groupBy(fn (EmbedSlice $content) => $content->getPage() ?? 0)
-            ->sortBy(fn (Collection $contents, $page) => $page)
-            ->take($maxPages)
-            ->flatMap(fn (Collection $contents) => collect($contents)
-                ->map(fn (EmbedSlice $image) => $this->makeBase64Image($image))
-            );
-    }
-
-    public function getEmbedContents(EmbedSlice $content): mixed
-    {
-        return $this->original->getEmbedContents($content);
+        return $this->original->getRawEmbedContents($content);
     }
 }

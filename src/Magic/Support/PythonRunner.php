@@ -1,8 +1,9 @@
 <?php
 
-namespace Mateffy\Magic\Files;
+namespace Mateffy\Magic\Support;
 
-use Mateffy\Magic\Files\Exceptions\PythonScriptException;
+use Illuminate\Support\Facades\Log;
+use Mateffy\Magic\Exceptions\PythonScriptException;
 
 class PythonRunner
 {
@@ -27,6 +28,8 @@ class PythonRunner
 
 			$command = "{$uvPath} run --isolated {$this->script} {$this->args}";
             $output = shell_exec($command);
+
+			Log::debug("PythonRunner: $output");
 
             $json = json_decode($output, true);
 

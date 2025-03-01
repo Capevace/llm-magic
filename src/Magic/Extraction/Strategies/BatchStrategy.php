@@ -2,7 +2,6 @@
 
 namespace Mateffy\Magic\Extraction\Strategies;
 
-use App\Models\Actor\ActorTelemetry;
 use Closure;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;

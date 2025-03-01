@@ -2,8 +2,8 @@
 
 namespace Mateffy\Magic\Builder\Concerns;
 
-use App\Models\Actor\ActorTelemetry;
 use Closure;
+use Mateffy\Magic\Chat\ActorTelemetry;
 
 trait HasExtractionModelCallbacks
 {

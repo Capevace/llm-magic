@@ -4,6 +4,8 @@ namespace Mateffy\Magic\Extraction\Slices;
 
 readonly class RawTextSlice implements Slice, TextualSlice
 {
+	public const DEFAULT_CHARACTERS_PER_TOKEN = 4.5;
+
     public function __construct(
         public string $text,
         public array $embeds = [],
@@ -37,4 +39,11 @@ readonly class RawTextSlice implements Slice, TextualSlice
     {
         return $this->page;
     }
+
+	public function getTokens(): int
+	{
+		$character_count = mb_strlen($this->text);
+
+		return (int) ceil($character_count / self::DEFAULT_CHARACTERS_PER_TOKEN);
+	}
 }

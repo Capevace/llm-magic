@@ -15,11 +15,10 @@ interface Artifact
     /**
      * @return array<Slice>
      */
-    public function getContents(): array;
+    public function getContents(?ContextOptions $filter = null): Collection;
 
     public function getText(): ?string;
-    public function getBase64Images(?int $maxPages = null): Collection;
-    public function getEmbedContents(EmbedSlice $content): mixed;
+    public function getRawEmbedContents(EmbedSlice $content): mixed;
     public function makeBase64Image(EmbedSlice $content): Base64Image;
 
     /**

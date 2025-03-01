@@ -20,6 +20,12 @@ return [
         'disk' => env('LLM_MAGIC_ARTIFACTS_DISK', 'artifacts'),
         'prefix' => env('LLM_MAGIC_ARTIFACTS_PREFIX', ''),
     ],
+    'python' => [
+        'cwd' => env('LLM_MAGIC_PYTHON_CWD', realpath(__DIR__ . '/../python')),
+        'uv' => [
+            'path' => env('LLM_MAGIC_PYTHON_UV_PATH', '/usr/bin/env uv'),
+        ],
+    ],
     'apis' => [
         'anthropic' => [
             'token' => env('ANTHROPIC_API_KEY'),

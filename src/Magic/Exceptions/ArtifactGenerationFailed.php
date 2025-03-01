@@ -1,5 +1,5 @@
 <?php
 
-namespace Mateffy\Magic\Files\Exceptions;
+namespace Mateffy\Magic\Exceptions;
 
 class ArtifactGenerationFailed extends \Exception {}

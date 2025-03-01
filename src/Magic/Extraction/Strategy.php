@@ -3,6 +3,7 @@
 namespace Mateffy\Magic\Extraction;
 
 use Closure;
+use Mateffy\Magic\Chat\ActorTelemetry;
 use Mateffy\Magic\Chat\Messages\Message;
 use Mateffy\Magic\Chat\TokenStats;
 use Mateffy\Magic\Models\LLM;
@@ -11,6 +12,7 @@ interface Strategy
 {
 	public static function make(
 		LLM $llm,
+		ContextOptions $contextOptions,
         ?string $outputInstructions,
         array $schema,
 

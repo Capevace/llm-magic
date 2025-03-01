@@ -1,6 +1,6 @@
 <?php
 
-namespace Mateffy\Magic\Files\Exceptions;
+namespace Mateffy\Magic\Exceptions;
 
 class PythonScriptException extends \RuntimeException
 {

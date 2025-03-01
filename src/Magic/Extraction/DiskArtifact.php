@@ -20,19 +20,27 @@ use Mateffy\Magic\Extraction\Slices\TextualSlice;
 
 /**
  * Artifact directory:
- * /artifacts/<ID>
- * /artifacts/<ID>/metadata.json
- * /artifacts/<ID>/source.<EXT>
- * /artifacts/<ID>/thumbnail.jpg
- * /artifacts/<ID>/embeds (optional)
- * /artifacts/<ID>/embeds/<FILENAME>.jpg
+ * /magic-artifact-<ID> - The base directory
+ * /magic-artifact-<ID>/metadata.json - Metadata about the artifact
+ * /magic-artifact-<ID>/contents.json - The extracted slices of the artifact
+ * /magic-artifact-<ID>/source.<EXT> - The original source file
+ * /magic-artifact-<ID>/source.txt - The complete text content of the artifact
+ * /magic-artifact-<ID>/marked.pdf (optional) - The marked up version of the source file (only PDF)
+ * /magic-artifact-<ID>/images (optional) - Directory for extracted images
+ * /magic-artifact-<ID>/images/image<NUM>.jpg
+ * /magic-artifact-<ID>/pages (optional) - Directory for extracted page "screenshots"
+ * /magic-artifact-<ID>/pages/page<NUM>.jpg
+ * /magic-artifact-<ID>/pages_marked (optional) - Directory for extracted page "screenshots" with embedded images marked
+ * /magic-artifact-<ID>/pages_marked/page<NUM>.jpg
+ * /magic-artifact-<ID>/pages_txt (optional) - Directory for extracted page text content
+ * /magic-artifact-<ID>/pages_txt/page<NUM>.txt
  */
 class DiskArtifact implements Artifact
 {
     protected ?ArtifactMetadata $metadata = null;
-    protected ?array $contents = null;
+    protected ?Collection $contents = null;
 
-    public readonly bool $cache;
+    public bool $cache;
     public readonly string $artifactDir;
     public readonly ?string $artifactDirDisk;
 
@@ -96,70 +104,68 @@ class DiskArtifact implements Artifact
     }
 
     /**
-     * @throws JsonException
-     * @throws ArtifactGenerationFailed
+     * @return Collection<Slice>
+     * @throws \Mateffy\Magic\Artifacts\ArtifactGenerationFailed
+	 * @throws JsonException
      */
-    public function getContents(): array
+    public function getContents(?ContextOptions $filter = null): Collection
     {
-        return $this->contents ?? $this->contents = match ($this->getMetadata()->type) {
-            ArtifactType::Text => [new RawTextSlice($this->getRawContents())],
-            ArtifactType::Image => [new ImageSlice(
-                path: $this->getMetadata()->path,
-                mimetype: $this->getMetadata()->mimetype,
-                absolutePath: true,
-            )],
+        $this->contents ??= match ($this->getMetadata()->type) {
+            ArtifactType::Text,
+            ArtifactType::Image => $this->getFlatFileContents(),
             ArtifactType::Pdf => $this->getPdfContents(),
             default => [],
         };
+
+		return $filter?->filter($this->contents) ?? $this->contents;
     }
 
     /**
      * @throws JsonException
      * @throws ArtifactGenerationFailed
+	 * @return Collection<Slice>
      */
-    public function refreshContents(): array
+    public function refreshContents(): Collection
     {
         $this->contents = null;
+		$this->cache = false;
 
-        return $this->getContents();
+        $contents = $this->getContents();
+
+		$this->cache = true;
+
+		return $contents;
     }
 
-    /**
-     * @throws ArtifactGenerationFailed
-     * @throws JsonException
-     */
-    protected function getPdfContents(): array
+    protected function findExistingArtifactDir(): ?string
     {
         $disk = $this->artifactDirDisk
             ? Storage::disk($this->artifactDirDisk)
             : null;
 
-        $outputDir = null;
-
         if ($this->cache) {
             if ($disk?->exists($this->artifactDir)) {
-                $outputDir = $this->artifactDir;
+                return $this->artifactDir;
             } elseif (File::exists($this->artifactDir)) {
-                $outputDir = $this->artifactDir;
+                return $this->artifactDir;
             }
         }
 
-        // No cached path found, generate
-        if ($outputDir === null) {
-            $parser = new PdfParser(path: $this->path, disk: $this->disk);
-            $outputDir = $parser->parse();
+        return null;
+    }
 
-            if ($this->cache) {
-                if ($this->artifactDirDisk) {
-                    $outputDir = $parser->moveToStorage(disk: $this->artifactDirDisk, path: $this->artifactDir);
-                } else {
-                    $outputDir = $parser->moveToPath(path: $this->artifactDir);
-                }
-            }
-        }
+	/**
+	 * @return Collection<Slice>
+	 * @throws JsonException
+	 */
+    protected function parseContentSlices(string $outputDir): Collection
+    {
+        $disk = $this->artifactDirDisk
+            ? Storage::disk($this->artifactDirDisk)
+            : null;
 
-        if ($this->cache && $disk) {
-            $contents = $disk->get("{$outputDir}/contents.json");
+        if ($disk) {
+            $contents = $disk->get("{$outputDir}/contents.json") ?? '[]';
             $data = json_decode($contents, true, flags: JSON_THROW_ON_ERROR);
         } else {
             $data = File::json("{$outputDir}/contents.json", flags: JSON_THROW_ON_ERROR);
@@ -168,14 +174,80 @@ class DiskArtifact implements Artifact
         return collect($data)
             ->map(fn (array $content) => match ($content['type']) {
                 'text' => RawTextSlice::from($content),
-//                'image', 'page-image',
+                'image', 'page-image',
                 'page-image-marked' => ImageSlice::from($content),
                 default => null
             })
             ->filter()
             ->sortBy(fn (Slice $content) => $content->getPage() ?? 0)
-            ->values()
-            ->all();
+            ->values();
+    }
+
+	/**
+	 * @throws JsonException
+	 * @throws \Mateffy\Magic\Artifacts\ArtifactGenerationFailed
+	 * @return Collection<Slice>
+	 */
+    protected function getPdfContents(): Collection
+    {
+        $outputDir = $this->findExistingArtifactDir();
+
+        // No cached path found, generate
+        if ($outputDir === null) {
+            $parser = new PdfParser(path: $this->path, disk: $this->disk);
+            $parser->parse();
+
+            if ($this->artifactDirDisk) {
+				$outputDir = $parser->moveToStorage(disk: $this->artifactDirDisk, path: $this->artifactDir);
+			} else {
+				$outputDir = $parser->moveToPath(path: $this->artifactDir);
+			}
+        }
+
+        return $this->parseContentSlices($outputDir);
+    }
+
+	/**
+	 * If an image is provided, we fake the processing process but still write the image to the artifact directory.
+	 * @throws JsonException
+	 * @return Collection<Slice>
+	 */
+    protected function getFlatFileContents(): Collection
+    {
+        $disk = $this->artifactDirDisk
+            ? Storage::disk($this->artifactDirDisk)
+            : null;
+
+        $outputDir = $this->findExistingArtifactDir();
+
+        if ($outputDir === null) {
+            $outputDir = $this->artifactDir;
+
+            if ($this->cache) {
+				$slice = match ($this->getMetadata()->type) {
+					default => new RawTextSlice($this->getRawContents()),
+					ArtifactType::Image => new ImageSlice(
+						type: 'image',
+						mimetype: $this->getMetadata()->mimetype,
+						path: "source.{$this->getMetadata()->extension}",
+					)
+				};
+
+                if ($this->artifactDirDisk) {
+                    $disk->makeDirectory($this->artifactDir);
+                    $disk->put("{$this->artifactDir}/metadata.json", json_encode($this->getMetadata()->toArray(), JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT));
+                    $disk->put("{$this->artifactDir}/contents.json", json_encode([$slice->toArray()], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT));
+                    $disk->put("{$this->artifactDir}/source.{$this->getMetadata()->extension}", $this->getRawContents());
+                } else {
+                    File::ensureDirectoryExists($this->artifactDir);
+					File::put("{$this->artifactDir}/metadata.json", json_encode($this->getMetadata()->toArray(), JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT));
+					File::put("{$this->artifactDir}/contents.json", json_encode([$slice->toArray()], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT));
+					File::put("{$this->artifactDir}/source.{$this->getMetadata()->extension}", $this->getRawContents());
+                }
+            }
+        }
+
+        return $this->parseContentSlices($outputDir);
     }
 
     /**
@@ -212,19 +284,7 @@ class DiskArtifact implements Artifact
             : Base64Image::fromPath($path);
     }
 
-    public function getBase64Images(?int $maxPages = null): Collection
-    {
-        return collect($this->getContents())
-            ->filter(fn (Slice $content) => $content instanceof EmbedSlice)
-            ->groupBy(fn (EmbedSlice $content) => $content->getPage() ?? 0)
-            ->sortBy(fn (Collection $contents, $page) => $page)
-            ->take($maxPages)
-            ->flatMap(fn (Collection $contents) => collect($contents)
-                ->map(fn (EmbedSlice $image) => $this->makeBase64Image($image))
-            );
-    }
-
-    public function getEmbedContents(EmbedSlice $content): mixed
+    public function getRawEmbedContents(EmbedSlice $content): mixed
     {
         $path = $content->isAbsolutePath()
             ? $content->getPath()
@@ -238,54 +298,14 @@ class DiskArtifact implements Artifact
     /**
      * Splits the document. Adds data until either the character limit or embed limit is reached, then starts a new split.
      *
-     * @return {0: array<array<Artifact>>, 1: int}
+     * @return array{0: Collection<Collection<Artifact>>, 1: int}
      */
-    public function split(int $maxTokens): array
+    public function split(int $maxTokens, ?ContextOptions $filter = null): array
     {
-        $artifacts = [];
-        $contents = [];
-
-        $tokens = 0;
-        $totalTokens = 0;
-
-        foreach ($this->getContents() as $content) {
-            if ($content instanceof TextualSlice) {
-                $textLength = strlen($content->text());
-
-                // TODO: Actually count tokens, because 1 character !== 1 token
-                // TODO: We can also split the text, if the tokens for this text are higher than the maxTokens
-                $tokens += $textLength;
-                $totalTokens += $textLength;
-
-                $contents[] = $content;
-            } elseif ($content instanceof EmbedSlice) {
-                if ($content instanceof ImageSlice && $content->width && $content->height) {
-                    // Based on Anthropic's model: tokens = (width px * height px)/750
-                    // This will not be accurate for other LLMs but is good enough for now
-                    $tokens += ($content->width * $content->height) / 750;
-                    $totalTokens += ($content->width * $content->height) / 750;
-                    // 3:4	951x1268 px
-                } else {
-                    // Based on Anthropic's model: we use the average for a 1000x1000 image
-                    $tokens += 1334;
-                    $totalTokens += 1334;
-                }
-
-                $contents[] = $content;
-            }
-
-            if ($tokens > $maxTokens) {
-                $artifacts[] = new SplitArtifact(original: $this, contents: $contents, tokens: $tokens);
-                $contents = [];
-
-                $tokens = 0;
-            }
-        }
-
-        if (! empty($contents)) {
-            $artifacts[] = new SplitArtifact(original: $this, contents: $contents, tokens: $tokens);
-        }
-
-        return [$artifacts, $totalTokens];
+		return ArtifactSplitter::split(
+			artifact: $this,
+			contents: $this->getContents(filter: $filter),
+			maxTokens: $maxTokens,
+		);
     }
 }

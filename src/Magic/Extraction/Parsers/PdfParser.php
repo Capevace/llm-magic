@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Mateffy\Magic\Artifacts\ArtifactGenerationFailed;
-use Mateffy\Magic\Files\PythonRunner;
+use Mateffy\Magic\Support\PythonRunner;
 
 class PdfParser
 {

@@ -8,6 +8,7 @@ use Mateffy\Magic\Chat\Messages\MultimodalMessage;
 use Mateffy\Magic\Chat\Messages\TextMessage;
 use Mateffy\Magic\Chat\ToolChoice;
 use Mateffy\Magic\Extraction\Artifact;
+use Mateffy\Magic\Extraction\ContextOptions;
 use Mateffy\Magic\Extraction\Extractor;
 use Mateffy\Magic\Extraction\Slices\RawTextSlice;
 use Mateffy\Magic\Chat\Prompt;
@@ -18,13 +19,10 @@ class SequentialExtractorPrompt implements Prompt
 {
     public function __construct(
         protected Extractor $extractor,
-
         /** @var Artifact[] $artifacts */
         protected array $artifacts,
+		protected ContextOptions $filter,
         protected ?array $previousData = null,
-
-        public bool $shouldForceFunction = true,
-        public bool $sendImages = true,
     ) {}
 
     public function system(): string
@@ -33,23 +31,6 @@ class SequentialExtractorPrompt implements Prompt
             $this->extractor->schema,
             JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT
         );
-
-        //        $features = collect(FeatureType::cases())
-        //            ->map(fn(FeatureType $feature) => "{$feature->value}: {$feature->label()}")
-        //            ->join("\n");
-        //
-        //        $schemaNotes = <<<NOTES
-        //        The schema describes real estate data. An estate can have multiple buildings, which can have multiple rentable units. We're really interested in the rentables in the context of the rest of the estate. But make sure to include every kind of data correctly: if there's info about the estate as a whole, include it there. If it's specific to a building, include it on that level. Is it only relevant for a specific rentable unit? Include it there. Each of the three can have features. A list of available features is provided below. Only include features in your output that you find information about inside the document.
-        //        The data will be used inside commercial real estate software, so models for CRM etc. are also provided.
-        //        If there area different space types, make sure to include them as rentables 1 by 1. If there are multiple buildings, include them 1 by 1. If there are multiple estates, include them 1 by 1. You get the point. Always extract the data as the smallest possible unit.
-        //        For example 300m2 of office and 200m2 of storage in the same building should be two rentables.
-        //        Make sure to output ALL data you can find, do not just limit it to 1 estate, 1 building, 1 rentable. If you find 10 rentables, output all 10. If you find 5 buildings, output all 5. If you find 3 estates, output all 3.
-        //
-        //        <valid-features>
-        //        <!-- List of available Features (w/ German name): -->
-        //        {$features}
-        //        </valid-features>
-        //        NOTES;
 
         return <<<PROMPT
         <instructions>
@@ -94,31 +75,10 @@ class SequentialExtractorPrompt implements Prompt
 
     public function prompt(): string
     {
-        $artifacts = collect($this->artifacts)
-            ->map(function (Artifact $artifact) {
-                $pages = collect($artifact->getContents())
-                    ->filter(fn ($content) => $content instanceof RawTextSlice)
-                    ->groupBy(fn (RawTextSlice $content) => $content->page ?? 0)
-                    ->sortBy(fn (Collection $contents, $page) => $page)
-                    ->values()
-                    ->flatMap(fn (Collection $contents) => collect($contents)
-                        ->map(fn (RawTextSlice $content) => match ($content::class) {
-                            RawTextSlice::class => Blade::render("<page num=\"{{ \$content->page }}\">\n{{ \$content->text }}\n</page>", ['content' => $content]),
-                        })
-                    )
-                    ->join("\n\n");
-
-                return Blade::render(
-                    <<<'BLADE'
-                    <artifact name="{{ $name }}" >
-                    {!! $pages !!}
-                    </artifact>
-                    BLADE,
-                    ['name' => $artifact->getMetadata()->name, 'pages' => $pages]
-                );
-            })
-            ->values()
-            ->join("\n");
+		$artifacts = ArtifactPromptFormatter::formatText(
+			artifacts: $this->artifacts,
+			filter: $this->filter
+		);
 
         if ($this->previousData) {
             $previousData = json_encode($this->previousData, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
@@ -131,44 +91,40 @@ class SequentialExtractorPrompt implements Prompt
         }
 
         return <<<TXT
-        <artifacts>
         {$artifacts}
-        </artifacts>
-
-        <task>Extract the contents of the given artifacts and add them to the previous data.</task>
 
         {$previousData}
+        
+        <task>Extract the contents of the given artifacts and add them to the previous data.</task>
         TXT;
     }
 
     public function messages(): array
     {
-        if (! $this->sendImages) {
-            return [
-                new TextMessage(role: Role::User, content: $this->prompt()),
-            ];
-        }
+		$images = ArtifactPromptFormatter::formatImagesAsBase64(
+			artifacts: $this->artifacts,
+			filter: $this->filter
+		);
 
         return [
             // Attach images to the prompt
             new MultimodalMessage(role: Role::User, content: [
                 new MultimodalMessage\Text($this->prompt()),
-                ...collect($this->artifacts)
-                    ->flatMap(fn (Artifact $artifact) => $artifact->getBase64Images()),
+                ...$images
             ]),
         ];
     }
 
+	protected function getExtractTool(): Extract
+	{
+		return new Extract(schema: $this->extractor->schema);
+	}
+
     public function tools(): array
     {
-        return array_filter([$this->forceFunction()]);
-    }
-
-    public function forceFunction(): ?InvokableTool
-    {
-        return $this->shouldForceFunction
-            ? new Extract(schema: $this->extractor->schema)
-            : null;
+        return [
+			'extract' => new Extract(schema: $this->extractor->schema)
+		];
     }
 
     public function shouldParseJson(): bool
@@ -178,6 +134,6 @@ class SequentialExtractorPrompt implements Prompt
 
 	public function toolChoice(): ToolChoice|string
 	{
-		return ToolChoice::Auto;
+		return 'extract';
 	}
 }

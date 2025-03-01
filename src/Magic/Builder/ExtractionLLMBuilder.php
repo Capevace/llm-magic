@@ -4,6 +4,7 @@ namespace Mateffy\Magic\Builder;
 
 use Illuminate\Support\Collection;
 use Mateffy\Magic\Builder\Concerns\HasArtifacts;
+use Mateffy\Magic\Builder\Concerns\HasContextOptions;
 use Mateffy\Magic\Builder\Concerns\HasExtractionModelCallbacks;
 use Mateffy\Magic\Builder\Concerns\HasMessageCallbacks;
 use Mateffy\Magic\Builder\Concerns\HasModel;
@@ -19,6 +20,7 @@ use Mateffy\Magic\Extraction\Strategy;
 class ExtractionLLMBuilder
 {
     use HasArtifacts;
+	use HasContextOptions;
     use HasExtractionModelCallbacks;
     use HasModel;
     use HasMessageCallbacks;
@@ -33,8 +35,9 @@ class ExtractionLLMBuilder
         $strategyClass = $this->getStrategyClass();
 
         /** @var Strategy $strategy */
-        $strategy = new $strategyClass(
+        $strategy = $strategyClass::make(
             llm: $this->model,
+			contextOptions: $this->getContextOptions(),
 			outputInstructions: 'Output instructions',
 			schema: $this->schema,
 			onDataProgress: $this->onDataProgress,

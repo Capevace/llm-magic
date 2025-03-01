@@ -2,11 +2,10 @@
 
 namespace Mateffy\Magic\Extraction\Strategies;
 
-use App\Models\Actor\ActorTelemetry;
-use Closure;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Mateffy\Magic;
+use Mateffy\Magic\Chat\ActorTelemetry;
 use Mateffy\Magic\Chat\Messages\Message;
 use Mateffy\Magic\Chat\Messages\TextMessage;
 use Mateffy\Magic\Chat\Prompt\ParallelMergerPrompt;
@@ -81,17 +80,22 @@ class ParallelStrategy extends Extractor
     protected function generate(Collection $artifacts, ?array $data): ?array
     {
         $threadId = Str::uuid()->toString();
-        $prompt = new SequentialExtractorPrompt(extractor: $this, artifacts: $artifacts->all(), previousData: $data);
+        $prompt = new SequentialExtractorPrompt(
+			extractor: $this,
+			artifacts: $artifacts->all(),
+			filter: $this->contextOptions,
+			previousData: $data
+		);
 
-//        if ($this->onActorTelemetry) {
-//            ($this->onActorTelemetry)(
-//                new ActorTelemetry(
-//                    id: $threadId,
-//                    model: "{$this->extractor->llm->getOrganization()->id}/{$this->extractor->llm->getModelName()}",
-//                    system_prompt: $prompt->system(),
-//                )
-//            );
-//        }
+        if ($this->onActorTelemetry) {
+            ($this->onActorTelemetry)(
+                new ActorTelemetry(
+                    id: $threadId,
+                    model: "{$this->llm->getOrganization()->id}/{$this->llm->getModelName()}",
+                    system_prompt: $prompt->system(),
+                )
+            );
+        }
 
         if ($this->onMessage) {
             ($this->onMessage)(new TextMessage(role: Role::System, content: $prompt->system()), $threadId);
@@ -142,13 +146,15 @@ class ParallelStrategy extends Extractor
         $threadId = Str::uuid();
         $prompt = new ParallelMergerPrompt(extractor: $this, datas: $datas);
 
-//        if ($this->onActorTelemetry) {
-//            ($this->onActorTelemetry)(new ActorTelemetry(
-//                id: $threadId,
-//                model: "{$this->extractor->llm->getOrganization()->id}/{$this->extractor->llm->getModelName()}",
-//                system_prompt: $prompt->system(),
-//            ));
-//        }
+        if ($this->onActorTelemetry) {
+            ($this->onActorTelemetry)(
+				new ActorTelemetry(
+					id: $threadId,
+					model: "{$this->extractor->llm->getOrganization()->id}/{$this->extractor->llm->getModelName()}",
+					system_prompt: $prompt->system(),
+				)
+			);
+        }
 
         if ($this->onMessage) {
             ($this->onMessage)(new TextMessage(role: Role::System, content: $prompt->system()), $threadId);

@@ -4,6 +4,7 @@ namespace Mateffy\Magic\Models\Providers;
 
 use Closure;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Mateffy\Magic\Chat\MessageCollection;
 use Mateffy\Magic\Chat\Messages\FunctionInvocationMessage;
@@ -135,6 +136,15 @@ trait UsesOpenAiApi
                         ->filter(fn (ContentInterface $message) => !($message instanceof ToolUse || $message instanceof ToolResult))
                         ->values();
 
+					dump('MultimodalMessage', [
+						'content' => $content
+							->map(fn (ContentInterface $message) => match ($message::class) {
+								Text::class => null,
+								Base64Image::class => $message->mime
+							})
+							->toArray(),
+					]);
+
                     return array_filter([
                         ...$tools,
                         $content->isNotEmpty()
@@ -153,6 +163,7 @@ trait UsesOpenAiApi
                                             ]
                                         ],
                                     })
+									->values()
                                     ->toArray(),
                             ]
                             : null,

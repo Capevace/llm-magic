@@ -2,15 +2,12 @@
 
 namespace Mateffy\Magic\Extraction\Strategies;
 
-use Closure;
 use Illuminate\Support\Collection;
-use Mateffy\Magic\Chat\Messages\DataMessage;
 use Mateffy\Magic\Chat\Messages\Message;
 use Mateffy\Magic\Chat\Prompt\SequentialExtractorPrompt;
 use Mateffy\Magic\Chat\TokenStats;
 use Mateffy\Magic\Extraction\Artifact;
 use Mateffy\Magic\Extraction\Extractor;
-use Mateffy\Magic\Loop\InferenceResult;
 
 class SequentialStrategy extends Extractor
 {
@@ -66,7 +63,12 @@ class SequentialStrategy extends Extractor
 
     protected function generate(Collection $artifacts, ?array $data): array
     {
-        $prompt = new SequentialExtractorPrompt(extractor: $this, artifacts: $artifacts->all(), previousData: $data);
+        $prompt = new SequentialExtractorPrompt(
+			extractor: $this,
+			artifacts: $artifacts->all(),
+			filter: $this->contextOptions,
+			previousData: $data,
+		);
 
 //        if ($this->onActorTelemetry) {
 //            ($this->onActorTelemetry)(new ActorTelemetry(

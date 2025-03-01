@@ -8,6 +8,7 @@ use Mateffy\Magic\Chat\Messages\MultimodalMessage;
 use Mateffy\Magic\Chat\Messages\TextMessage;
 use Mateffy\Magic\Chat\ToolChoice;
 use Mateffy\Magic\Extraction\Artifact;
+use Mateffy\Magic\Extraction\ContextOptions;
 use Mateffy\Magic\Extraction\Extractor;
 use Mateffy\Magic\Extraction\Slices\RawTextSlice;
 use Mateffy\Magic\Extraction\Slices\Slice;
@@ -23,9 +24,7 @@ class ExtractorPrompt implements Prompt
         /** @var Artifact[] $artifacts */
         protected array $artifacts,
 
-        public int $maxPages = 10,
-        public bool $shouldForceFunction = true,
-        public bool $sendImages = true,
+		public ContextOptions $filter
     ) {}
 
     public function system(): string
@@ -107,54 +106,29 @@ class ExtractorPrompt implements Prompt
 
     public function prompt(): string
     {
-        $artifacts = collect($this->artifacts)
-            ->map(function (Artifact $artifact) {
-                $pages = collect($artifact->getContents())
-                    ->filter(fn (Slice $content) => $content instanceof TextualSlice)
-                    ->groupBy(fn (TextualSlice $content) => $content->getPage() ?? 0)
-                    ->sortBy(fn (Collection $contents, $page) => $page)
-                    ->values()
-                    ->take($this->maxPages)
-                    ->flatMap(fn (Collection $contents) => collect($contents)
-                        ->map(fn (RawTextSlice $content) => "<page num=\"{$content->page}\">\n{$content->text}\n</page>")
-                    )
-                    ->join("\n");
-
-                return Blade::render(
-                    <<<'BLADE'
-                    <artifact name="{{ $name }}">
-                        {{ $pages }}
-                    </artifact>
-                    BLADE,
-                    ['name' => $artifact->getMetadata()->name, 'pages' => $pages]
-                );
-            })
-            ->values()
-            ->join("\n");
+        $artifacts = ArtifactPromptFormatter::formatText($this->artifacts, filter: $this->filter);
 
         return <<<TXT
-        <task>Extract the contents of the given artifacts.</task>
-
         <artifacts>
         {$artifacts}
         </artifacts>
+
+        <task>Extract the contents of the given artifacts.</task>
         TXT;
     }
 
     public function messages(): array
     {
-        if (! $this->sendImages) {
-            return [
-                new TextMessage(role: Role::User, content: $this->prompt()),
-            ];
-        }
+		$images = ArtifactPromptFormatter::formatImagesAsBase64(
+			artifacts: $this->artifacts,
+			filter: $this->filter
+		);
 
         return [
             // Attach images to the prompt
             new MultimodalMessage(role: Role::User, content: [
                 new MultimodalMessage\Text($this->prompt()),
-                ...collect($this->artifacts)
-                    ->flatMap(fn (Artifact $artifact) => $artifact->getBase64Images(maxPages: $this->maxPages)),
+                ...$images
             ]),
         ];
     }
