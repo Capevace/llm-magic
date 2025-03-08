@@ -6,11 +6,12 @@ use Aws\BedrockRuntime\BedrockRuntimeClient;
 use Closure;
 use Mateffy\Magic\Chat\MessageCollection;
 use Mateffy\Magic\Chat\Messages\Message;
-use Mateffy\Magic\Chat\Prompt\ExtractorPrompt;
+use Mateffy\Magic\Chat\Prompt;
 use Mateffy\Magic\Chat\TokenStats;
+use Mateffy\Magic\Chat\ToolChoice;
 use Mateffy\Magic\Exceptions\InvalidRequest;
 use Mateffy\Magic\Exceptions\TooManyTokensForModelRequested;
-use Mateffy\Magic\Chat\Prompt;
+use Mateffy\Magic\Support\ApiTokens\TokenResolver;
 use Mateffy\Magic\Models\Decoders\ClaudeResponseDecoder;
 use Mateffy\Magic\Tools\InvokableTool;
 use OpenAI\Responses\Chat\CreateResponse;
@@ -20,7 +21,7 @@ trait UsesAwsBedrockApi
 {
     protected function getApiToken(): string
     {
-        return config('llm-magic.apis.aws.token');
+        return app(TokenResolver::class)->resolve('aws-bedrock');
     }
 
     /**
@@ -53,13 +54,16 @@ trait UsesAwsBedrockApi
             ],
         ];
 
-        if ($prompt instanceof ExtractorPrompt && ($fn = $prompt->forceFunction())) {
-            $config['toolChoice'] = [
-                'tool' => [
-                    'name' => $fn->name(),
-                ],
-            ];
-        }
+		$rawToolChoice = $prompt->toolChoice();
+		$toolChoice = match ($rawToolChoice) {
+			ToolChoice::Auto => null,
+			ToolChoice::Required => 'required',
+			default => ['tool' => ['name' => $rawToolChoice]]
+		};
+
+		if ($toolChoice) {
+			$config['toolChoice'] = $toolChoice;
+		}
 
         $bedrockClient = new BedrockRuntimeClient([
             'region' => config('llm-magic.apis.aws.region', 'eu-central-1'),

@@ -2,12 +2,16 @@
 
 namespace Mateffy\Magic\Extraction\Slices;
 
+use Mateffy\Magic\Extraction\ContentType;
+use Mateffy\Magic\Tokens\ImageTokenizer;
+
 readonly class ImageSlice implements Slice, EmbedSlice
 {
     public function __construct(
-		public string $type,
+		public ContentType $type,
         public string $mimetype,
         public string $path,
+		public ?string $unmodifiedPath = null,
         public ?int $page = null,
         public ?int $width = null,
         public ?int $height = null,
@@ -18,9 +22,10 @@ readonly class ImageSlice implements Slice, EmbedSlice
     public function toArray(): array
     {
         return [
-			'type' => $this->type,
+			'type' => $this->type->value,
             'mimetype' => $this->mimetype,
             'path' => $this->path,
+			'unmodified_path' => $this->unmodifiedPath,
             'page' => $this->page,
             'width' => $this->width,
             'height' => $this->height,
@@ -30,9 +35,10 @@ readonly class ImageSlice implements Slice, EmbedSlice
     public static function from(array $data): static
     {
         return new static(
-			type: $data['type'],
+			type: ContentType::tryFrom($data['type']),
             mimetype: $data['mimetype'],
             path: $data['path'],
+			unmodifiedPath: $data['unmodified_path'] ?? null,
             page: $data['page'] ?? null,
             width: $data['width'] ?? null,
             height: $data['height'] ?? null,
@@ -49,59 +55,32 @@ readonly class ImageSlice implements Slice, EmbedSlice
         return $this->path;
     }
 
-    public function getMimeType(): string
+	public function getUnmodifiedPath(): ?string
+	{
+		// Unmodified path is the path before any transformations were applied.
+		// so for images_marked/image1.jpg, it would be images/image1.jpg
+		// but it's optional. if so it's assumed the normal path is the unmodified path.
+
+		return $this->unmodifiedPath;
+	}
+
+	public function getMimeType(): string
     {
         return $this->mimetype;
     }
 
-    public function isAbsolutePath(): string
+    public function isAbsolutePath(): bool
     {
         return $this->absolutePath;
     }
 
 	public function getTokens(): int
 	{
-		return $this->calculateTokensWithOpenAI($this->width, $this->height);
+		return app(ImageTokenizer::class)->tokenize($this->width, $this->height);
 	}
 
-	public static function calculateTokensWithOpenAI(?int $width, ?int $height): int
+	public function getType(): ContentType
 	{
-		// We use the OpenAI method of calculating tokens for images. https://platform.openai.com/docs/guides/vision#calculating-costs
-		// This will not be accurate for all LLM providers and can be improved in the future.
-
-		$width ??= 2048;
-		$height ??= 2048;
-
-		// Step 1: Scale to fit within 2048x2048 while maintaining aspect ratio
-		$maxSize = 2048;
-		if ($width > $maxSize || $height > $maxSize) {
-			$scale = $maxSize / max($width, $height);
-			$width = (int) round($width * $scale);
-			$height = (int) round($height * $scale);
-		}
-
-		// Step 2: Scale shortest side to at least 768px
-		$minSize = 768;
-		if (min($width, $height) > $minSize) {
-			$scale = $minSize / min($width, $height);
-			$width = (int) round($width * $scale);
-			$height = (int) round($height * $scale);
-		}
-
-		// Step 3: Calculate the number of 512px tiles required
-		$tiles = ceil($width / 512) * ceil($height / 512);
-
-		// Step 4: Compute the final token cost
-		return ($tiles * 170) + 85;
-	}
-
-	public static function calculateTokensWithAnthropic(?int $width, ?int $height): int
-	{
-		$width ??= 2048;
-		$height ??= 2048;
-
-		// Based on Anthropic's model: tokens = (width px * height px)/750
-		// This will not be accurate for other LLMs but is good enough for now
-		return (int) ($width * $height) / 750;
+		return $this->type;
 	}
 }

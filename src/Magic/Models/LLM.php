@@ -14,6 +14,7 @@ interface LLM extends ModelLaunchInterface
     public function getOptions(): ElElEmOptions;
 
     public function getModelName(): string;
+	public function getModelLabel(): string;
 
     public function getModelCost(): ?ModelCost;
 }

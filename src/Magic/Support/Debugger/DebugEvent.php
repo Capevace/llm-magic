@@ -5,6 +5,9 @@ namespace Mateffy\Magic\Support\Debugger;
 use Illuminate\Support\Str;
 use Livewire\Wireable;
 
+/**
+ * A debug event is something worth logging. Simple DTO for the debugging logic.
+ */
 class DebugEvent implements Wireable
 {
 	public string $id;

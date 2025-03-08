@@ -3,204 +3,75 @@
 namespace Mateffy\Magic\Extraction\Strategies;
 
 use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
-use Mateffy\Magic;
-use Mateffy\Magic\Chat\ActorTelemetry;
-use Mateffy\Magic\Chat\Messages\Message;
-use Mateffy\Magic\Chat\Messages\TextMessage;
+use Illuminate\Support\Facades\Log;
 use Mateffy\Magic\Chat\Prompt\ParallelMergerPrompt;
-use Mateffy\Magic\Chat\Prompt\Role;
 use Mateffy\Magic\Chat\Prompt\SequentialExtractorPrompt;
-use Mateffy\Magic\Chat\TokenStats;
-use Mateffy\Magic\Extraction\Artifact;
-use Mateffy\Magic\Extraction\Extractor;
-use Mateffy\Magic\Extraction\SplitArtifact;
+use Mateffy\Magic\Extraction\ArtifactBatcher;
+use Mateffy\Magic\Extraction\Artifacts\Artifact;
 
 class ParallelStrategy extends Extractor
 {
-    protected ?TokenStats $totalTokenStats = null;
-
     /**
-     * @param  Artifact[]  $artifacts
+     * @param Artifact[] $artifacts
      */
     public function run(array $artifacts): array
     {
-        $maxChunkTokens = 10000;
-        $maxBatchTokens = 30000;
+		$batches = ArtifactBatcher::batch(
+			artifacts: $artifacts,
+			options: $this->contextOptions,
+			maxTokens: $this->chunkSize,
+			llm: $this->llm
+		);
 
-        /** @var Collection<SplitArtifact> $chunks */
-        $chunks = collect();
-
-        foreach ($artifacts as $artifact) {
-            [$splitArtifacts, $tokensUsed] = $artifact->split($maxChunkTokens);
-
-            $chunks = $chunks->concat($splitArtifacts);
-        }
-
-
-        /** @var Collection<Collection<SplitArtifact>> $batches */
-        $batches = collect();
-        $batch = collect();
-
-        foreach ($chunks as $splitArtifact) {
-            $batch->push($splitArtifact);
-
-            if ($batch->sum(fn (SplitArtifact $artifact) => $artifact->tokens) > $maxBatchTokens) {
-                $batches->push($batch);
-                $batch = collect();
-            }
-        }
-
-        if ($batch->isNotEmpty()) {
-            $batches->push($batch);
-        }
-
-        $datas = [];
+        $dataList = [];
         $data = null;
 
         foreach ($batches as $batch) {
             $data = $this->generate($batch, data: $data) ?? $data;
 
-            if ($this->onDataProgress && $data !== null) {
-                ($this->onDataProgress)($data);
-            }
-
-            $datas[] = $data;
+            $dataList[] = $data;
         }
 
-        $data = $this->merge($datas);
+        $data = $this->merge($dataList);
 
-        if ($this->onDataProgress && $data !== null) {
-            ($this->onDataProgress)($data);
-        }
+        $this->logDataProgress(data: $data);
 
         return $data;
     }
 
     protected function generate(Collection $artifacts, ?array $data): ?array
     {
-        $threadId = Str::uuid()->toString();
         $prompt = new SequentialExtractorPrompt(
 			extractor: $this,
 			artifacts: $artifacts->all(),
-			filter: $this->contextOptions,
+			contextOptions: $this->contextOptions,
 			previousData: $data
 		);
 
-        if ($this->onActorTelemetry) {
-            ($this->onActorTelemetry)(
-                new ActorTelemetry(
-                    id: $threadId,
-                    model: "{$this->llm->getOrganization()->id}/{$this->llm->getModelName()}",
-                    system_prompt: $prompt->system(),
-                )
-            );
-        }
+		$threadId = $this->createActorThread(llm: $this->llm, prompt: $prompt);
 
-        if ($this->onMessage) {
-            ($this->onMessage)(new TextMessage(role: Role::System, content: $prompt->system()), $threadId);
-
-            foreach ($prompt->messages() as $message) {
-                ($this->onMessage)($message, $threadId);
-            }
-        }
-
-        $messages = [];
-        $lastTokenStats = null;
-
-        $messages = Magic::chat()
-            ->model($this->llm)
-            ->prompt($prompt)
-            ->onMessageProgress(function (Message $message) use (&$messages, $threadId) {
-                //            ($this->onDataProgress)(new InferenceResult(value: $message->toArray(), messages: $messages));
-
-                if ($this->onMessageProgress) {
-                    ($this->onMessageProgress)($message, $threadId);
-                }
-            })
-            ->onMessage(function (Message $message) use (&$messages, $threadId) {
-                $messages[] = $message;
-
-                //            ($this->onDataProgress)(new InferenceResult(value: $message->toArray(), messages: $messages));
-
-                if ($this->onMessage) {
-                    ($this->onMessage)($message, $threadId);
-                }
-            })
-            ->onTokenStats(function (TokenStats $tokenStats) use (&$data, &$lastTokenStats) {
-                $lastTokenStats = $tokenStats;
-
-                if ($this->onTokenStats) {
-                    ($this->onTokenStats)($this->totalTokenStats?->add($lastTokenStats) ?? $lastTokenStats);
-                }
-            })
-            ->stream();
-
-        $this->totalTokenStats = $this->totalTokenStats?->add($lastTokenStats) ?? $lastTokenStats;
-
-        return $messages->lastData();
+        return $this->send(
+			threadId: $threadId,
+			llm: $this->llm,
+			prompt: $prompt
+		);
     }
 
-    protected function merge(array $datas): ?array
+    protected function merge(array $dataList): ?array
     {
-        $threadId = Str::uuid();
-        $prompt = new ParallelMergerPrompt(extractor: $this, datas: $datas);
+        $prompt = new ParallelMergerPrompt(extractor: $this, datas: $dataList);
 
-        if ($this->onActorTelemetry) {
-            ($this->onActorTelemetry)(
-				new ActorTelemetry(
-					id: $threadId,
-					model: "{$this->extractor->llm->getOrganization()->id}/{$this->extractor->llm->getModelName()}",
-					system_prompt: $prompt->system(),
-				)
-			);
-        }
+        $threadId = $this->createActorThread(llm: $this->llm, prompt: $prompt);
 
-        if ($this->onMessage) {
-            ($this->onMessage)(new TextMessage(role: Role::System, content: $prompt->system()), $threadId);
-
-            foreach ($prompt->messages() as $message) {
-                ($this->onMessage)($message, $threadId);
-            }
-        }
-
-        $lastTokenStats = null;
-        $strategy = $this;
-
-        $messages = Magic::chat()
-            ->model($this->llm)
-            ->prompt($prompt)
-            ->onMessageProgress(function (Message $message) use (&$messages, $threadId, $strategy) {
-                if ($strategy->onDataProgress && $data = $message->toArray()['data'] ?? null) {
-                    ($strategy->onDataProgress)($data, $threadId);
-                }
-
-                if ($strategy->onMessageProgress) {
-                    ($strategy->onMessageProgress)($message, $threadId);
-                }
-            })
-            ->onMessage(function (Message $message) use (&$messages, $threadId, $strategy) {
-                if ($strategy->onDataProgress && $data = $message->toArray()['data'] ?? null) {
-                    ($strategy->onDataProgress)($data, $threadId);
-                }
-
-                if ($strategy->onMessage) {
-                    ($strategy->onMessage)($message, $threadId);
-                }
-            })
-            ->onTokenStats(function (TokenStats $tokenStats) use (&$data, &$lastTokenStats, $strategy) {
-                $lastTokenStats = $tokenStats;
-
-                if ($strategy->onTokenStats) {
-                    ($strategy->onTokenStats)($strategy->totalTokenStats?->add($lastTokenStats) ?? $lastTokenStats);
-                }
-            })
-            ->stream();
-
-        if ($lastTokenStats) {
-            $this->totalTokenStats = $this->totalTokenStats?->add($lastTokenStats) ?? $lastTokenStats;
-        }
-
-        return $messages->lastData();
+		return $this->send(
+			threadId: $threadId,
+			llm: $this->llm,
+			prompt: $prompt
+		);
     }
+
+	public static function getLabel(): string
+	{
+		return __('Parallel');
+	}
 }

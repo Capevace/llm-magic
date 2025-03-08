@@ -5,7 +5,7 @@ namespace Mateffy\Magic\Builder\Concerns;
 use Mateffy\Magic\Extraction\Strategies\ParallelStrategy;
 use Mateffy\Magic\Extraction\Strategies\SequentialStrategy;
 use Mateffy\Magic\Extraction\Strategies\SimpleStrategy;
-use Mateffy\Magic\Extraction\Strategy;
+use Mateffy\Magic\Extraction\Strategies\Strategy;
 
 trait HasStrategy
 {
@@ -21,13 +21,13 @@ trait HasStrategy
     /**
      * @return class-string<Strategy>|null
      */
-    public function getStrategyClass(): ?string
+    public function getStrategyClass(): string
     {
         return match ($this->strategy) {
             'simple' => SimpleStrategy::class,
             'sequential' => SequentialStrategy::class,
             'parallel' => ParallelStrategy::class,
-            default => null,
+            default => throw new \InvalidArgumentException("Invalid strategy: {$this->strategy}"),
         };
     }
 }

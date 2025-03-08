@@ -2,17 +2,13 @@
 
 namespace Mateffy\Magic\Chat\Prompt;
 
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Log;
 use Mateffy\Magic\Chat\Messages\MultimodalMessage;
-use Mateffy\Magic\Chat\Messages\TextMessage;
-use Mateffy\Magic\Chat\ToolChoice;
-use Mateffy\Magic\Extraction\Artifact;
-use Mateffy\Magic\Extraction\ContextOptions;
-use Mateffy\Magic\Extraction\Extractor;
-use Mateffy\Magic\Extraction\Slices\RawTextSlice;
 use Mateffy\Magic\Chat\Prompt;
-use Mateffy\Magic\Tools\InvokableTool;
+use Mateffy\Magic\Chat\ToolChoice;
+use Mateffy\Magic\Extraction\Artifacts\Artifact;
+use Mateffy\Magic\Extraction\ContextOptions;
+use Mateffy\Magic\Extraction\Strategies\Extractor;
 use Mateffy\Magic\Tools\Prebuilt\Extract;
 
 class SequentialExtractorPrompt implements Prompt
@@ -21,7 +17,7 @@ class SequentialExtractorPrompt implements Prompt
         protected Extractor $extractor,
         /** @var Artifact[] $artifacts */
         protected array $artifacts,
-		protected ContextOptions $filter,
+		protected ContextOptions $contextOptions,
         protected ?array $previousData = null,
     ) {}
 
@@ -53,6 +49,12 @@ class SequentialExtractorPrompt implements Prompt
         The contents of the documents/artifacts have been prepared for you, and are included as a list of text blocks and image references.
         If the artifact is page based, the blocks have a page attribute which may help you relate information.
         The images are also provided to you. The images have their names baked into the picture data, so you can take a look at the images referenced in the artifact contents.
+        
+        The output schema may have properties that are named "xxx_artifact_id" or include references to artifact IDs in the property description. If that is the case, you're supposed to assign images to these properties.
+        You can reference the images that are embedded in the artifacts/documents by their "ref" properties. You can find them in the XML in the text given to you, or directly written onto the images in the top left corner.
+        The artifact IDs have a format that you HAVE TO use. Otherwise the data returned is INVALID and will FAIL! 
+        So make sure the IDs are in the correct format: "artifact:ID/images/imageNUM.EXT" (e.g. "artifact:123456/images/image1.jpg", "artifact:873242393/images/image72.png").
+        You will find these references in the text or on the images. ONLY USE ARTIFACTS THAT YOU CAN ACTUALLY SEE IN THE DOCUMENTS/IMAGES. DO NOT MAKE ASSUMPTIONS OR MAKE THEM UP. MAKE SURE TO USE THE CORRECT ID FORMAT! DO NOT USE NORMAL URLS HERE! 
 
         Some images may be included that are not referenced in any artifact. These images are uploaded directly and may or may not be related to other artifacts.
 
@@ -60,24 +62,28 @@ class SequentialExtractorPrompt implements Prompt
         If there is previous data, it is not your job to create a brand new JSON object, but to enrich the existing one with the artifacts you receive.
         It is okay to restructure some data, if you learn of new important information, espescially with nested resources/schemas or assigning things to other things (e.g. a real estate unit to a building).
         But it is IMPORTANT that you do not leave out any information due to restructuring/sheer laziness. Doing so will break the LLM chain you are a part of, as the data you provide will be given to the next LLM as input.
-        Do not output any plaintext. Only output the structured JSON data.
         </instructions>
 
         <json-schema>
         {$schema}
         </json-schema>
 
-        <json-schema-notes>
+        <output-instructions>
         {$this->extractor->outputInstructions}
-        </json-schema-notes>
+        </output-instructions>
+
+        <how-to-output>
+        You HAVE to use the 'extract' tool to extract the data from the artifacts. Just outputting data manually WILL NOT WORK!
+        If you don't call a tool, the data will not be extracted and the LLM will not be able to continue.
+        So, it is VERY important that you use the tool!		
+        </how-to-output>
         PROMPT;
     }
 
     public function prompt(): string
     {
 		$artifacts = ArtifactPromptFormatter::formatText(
-			artifacts: $this->artifacts,
-			filter: $this->filter
+			artifacts: $this->artifacts, contextOptions: $this->contextOptions
 		);
 
         if ($this->previousData) {
@@ -90,27 +96,35 @@ class SequentialExtractorPrompt implements Prompt
             $previousData = null;
         }
 
+		Log::info('previousData', ['previous' => $previousData]);
+
         return <<<TXT
         {$artifacts}
 
         {$previousData}
         
-        <task>Extract the contents of the given artifacts and add them to the previous data.</task>
+        <task>
+            Extract the contents of the given artifacts and ADD/MERGE them into the previous data contained in the <previous-data> tag.
+            You MUST NOT loose any information from the previous data. If you don't include it in your `extract` function call, it WILL be lost and you WILL BE PENALIZED.
+        </task>
+
+        <output-instructions>
+        {$this->extractor->outputInstructions}
+        </output-instructions>
         TXT;
     }
 
     public function messages(): array
     {
 		$images = ArtifactPromptFormatter::formatImagesAsBase64(
-			artifacts: $this->artifacts,
-			filter: $this->filter
+			artifacts: $this->artifacts, contextOptions: $this->contextOptions
 		);
 
         return [
             // Attach images to the prompt
             new MultimodalMessage(role: Role::User, content: [
-                new MultimodalMessage\Text($this->prompt()),
-                ...$images
+				new MultimodalMessage\Text($this->prompt()),
+                ...$images,
             ]),
         ];
     }
@@ -123,17 +137,12 @@ class SequentialExtractorPrompt implements Prompt
     public function tools(): array
     {
         return [
-			'extract' => new Extract(schema: $this->extractor->schema)
+			$this->getExtractTool()
 		];
-    }
-
-    public function shouldParseJson(): bool
-    {
-        return true;
     }
 
 	public function toolChoice(): ToolChoice|string
 	{
-		return 'extract';
+		return ToolChoice::Required;
 	}
 }

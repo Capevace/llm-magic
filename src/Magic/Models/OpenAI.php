@@ -29,7 +29,7 @@ class OpenAI extends ElElEm
         );
     }
 
-    public static function models(?string $prefix = 'openai', ?string $prefixLabels = 'OpenAI API'): Collection
+    public static function models(?string $prefix = 'openai', ?string $prefixLabels = 'OpenAI'): Collection
     {
         return static::prefixModels([
             'o1-preview' => 'GPT-o1 Preview',

@@ -3,19 +3,16 @@
 namespace Mateffy\Magic\Chat\Prompt;
 
 use Mateffy\Magic\Chat\Messages\TextMessage;
-use Mateffy\Magic\Chat\ToolChoice;
-use Mateffy\Magic\Extraction\Extractor;
 use Mateffy\Magic\Chat\Prompt;
-use Mateffy\Magic\Tools\InvokableTool;
+use Mateffy\Magic\Chat\ToolChoice;
+use Mateffy\Magic\Extraction\Strategies\Extractor;
 use Mateffy\Magic\Tools\Prebuilt\Extract;
 
 class ParallelMergerPrompt implements Prompt
 {
     public function __construct(
         protected Extractor $extractor,
-        protected array $datas,
-
-        public bool $shouldForceFunction = true,
+        protected array $datas
     ) {}
 
     public function system(): string
@@ -39,6 +36,14 @@ class ParallelMergerPrompt implements Prompt
         For example one LLM may have looked at document A containing product A and B, and another LLM may have looked at document B containing only product B.
         If you merge these two documents dumbly, you may end up with just one or three product entities, which is not correct.
         So, you'll need to identify entities as best as you can, and then merge them correctly.
+        There may also be duplicates. Some of them obvious, some of them not so much. If you're not sure something is a duplicate, it's better to keep it in the data!
+        You can combine duplicates into one BUT MAKE SURE TO ONLY DO THIS FOR ACTUAL DUPLICATES. DO NOT REMOVE DATA THAT IS NOT A DUPLICATE.
+        
+        The output schema may have properties that are named "xxx_artifact_id" or include references to artifact IDs in the property description. If that is the case, you're supposed to assign images to these properties.
+        The data you are given may already have these references assigned. DO NOT REMOVE ANY OF THESE REFERENCES. You can fill empty values if you are merging two objects for example, but NEVER remove them.
+        The artifact IDs have a format that you HAVE TO use. Otherwise the data returned is INVALID and will FAIL! 
+        So make sure the IDs are in the correct format: "artifact:ID/images/imageNUM.EXT" (e.g. "artifact:123456/images/image1.jpg", "artifact:873242393/images/image72.png").
+        ONLY USE ARTIFACTS THAT YOU CAN ACTUALLY SEE IN THE DATA. DO NOT MAKE ASSUMPTIONS OR MAKE THEM UP. MAKE SURE TO USE THE CORRECT ID FORMAT! DO NOT USE NORMAL URLS HERE! 
 
         You are given the notes that were used to create the JSON object. These contain info that was relevant when generating the output, and may be helpful in understanding the data.
         </instructions>
@@ -62,11 +67,17 @@ class ParallelMergerPrompt implements Prompt
             ->join("\n");
 
         return <<<TXT
-        <json-objects>
+        <json-to-merge-into-one>
         {$jsonObjects}
-        </json-objects>
+        </json-to-merge-into-one>
 
-        <task>Merge the JSON objects in <json-objects> into one JSON object.</task>
+        <task>
+            Merge the JSON objects in <json-to-merge-into-one> into one JSON object both logically and syntactically.
+            Do your best to merge the data so it makes sense and is complete.
+            
+            MAKE SURE TO USE THE `extract` tool to merge the data. If you don't call the tool, the data will not be merged and the LLM will not be able to continue!
+            ANY DATA YOU OUTPUT WITHOUT USING THE TOOL IS INVALID AND WILL BE PENALIZED!
+        </task>
         TXT;
     }
 
@@ -79,23 +90,13 @@ class ParallelMergerPrompt implements Prompt
 
     public function tools(): array
     {
-        return array_filter([$this->forceFunction()]);
-    }
-
-    public function forceFunction(): ?InvokableTool
-    {
-        return $this->shouldForceFunction
-            ? new Extract(schema: $this->extractor->schema)
-            : null;
-    }
-
-    public function shouldParseJson(): bool
-    {
-        return true;
+        return [
+			new Extract(schema: $this->extractor->schema)
+		];
     }
 
 	public function toolChoice(): ToolChoice|string
 	{
-		return ToolChoice::Auto;
+		return ToolChoice::Required;
 	}
 }

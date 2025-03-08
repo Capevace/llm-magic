@@ -4,29 +4,29 @@ namespace Mateffy\Magic\Builder;
 
 use Illuminate\Support\Collection;
 use Mateffy\Magic\Builder\Concerns\HasArtifacts;
+use Mateffy\Magic\Builder\Concerns\HasChunkSize;
 use Mateffy\Magic\Builder\Concerns\HasContextOptions;
 use Mateffy\Magic\Builder\Concerns\HasExtractionModelCallbacks;
 use Mateffy\Magic\Builder\Concerns\HasMessageCallbacks;
 use Mateffy\Magic\Builder\Concerns\HasModel;
+use Mateffy\Magic\Builder\Concerns\HasOutputInstructions;
 use Mateffy\Magic\Builder\Concerns\HasSchema;
 use Mateffy\Magic\Builder\Concerns\HasStrategy;
-use Mateffy\Magic\Builder\Concerns\HasSystemPrompt;
 use Mateffy\Magic\Builder\Concerns\HasTokenCallback;
 use Mateffy\Magic\Builder\Concerns\HasTools;
-use Mateffy\Magic\Chat\MessageCollection;
-use Mateffy\Magic\Extraction\Extractor;
-use Mateffy\Magic\Extraction\Strategy;
+use Mateffy\Magic\Extraction\Strategies\Strategy;
 
 class ExtractionLLMBuilder
 {
     use HasArtifacts;
 	use HasContextOptions;
+	use HasChunkSize;
     use HasExtractionModelCallbacks;
     use HasModel;
     use HasMessageCallbacks;
+	use HasOutputInstructions;
     use HasSchema;
     use HasStrategy;
-    use HasSystemPrompt;
     use HasTokenCallback;
     use HasTools;
 
@@ -38,8 +38,9 @@ class ExtractionLLMBuilder
         $strategy = $strategyClass::make(
             llm: $this->model,
 			contextOptions: $this->getContextOptions(),
-			outputInstructions: 'Output instructions',
+			outputInstructions: $this->outputInstructions,
 			schema: $this->schema,
+			chunkSize: $this->getChunkSize(),
 			onDataProgress: $this->onDataProgress,
 			onTokenStats: $this->onTokenStats,
 			onMessageProgress: $this->onMessageProgress,

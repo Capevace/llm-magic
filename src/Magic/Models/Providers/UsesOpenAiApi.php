@@ -4,7 +4,6 @@ namespace Mateffy\Magic\Models\Providers;
 
 use Closure;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Mateffy\Magic\Chat\MessageCollection;
 use Mateffy\Magic\Chat\Messages\FunctionInvocationMessage;
@@ -18,10 +17,11 @@ use Mateffy\Magic\Chat\Messages\MultimodalMessage\Text;
 use Mateffy\Magic\Chat\Messages\MultimodalMessage\ToolResult;
 use Mateffy\Magic\Chat\Messages\MultimodalMessage\ToolUse;
 use Mateffy\Magic\Chat\Messages\TextMessage;
+use Mateffy\Magic\Chat\Prompt;
 use Mateffy\Magic\Chat\TokenStats;
 use Mateffy\Magic\Chat\ToolChoice;
 use Mateffy\Magic\Exceptions\UnknownInferenceException;
-use Mateffy\Magic\Chat\Prompt;
+use Mateffy\Magic\Support\ApiTokens\TokenResolver;
 use Mateffy\Magic\Models\Decoders\OpenAiResponseDecoder;
 use Mateffy\Magic\Tools\InvokableTool;
 use OpenAI\Client;
@@ -30,12 +30,12 @@ trait UsesOpenAiApi
 {
     protected function getOpenAiApiKey(): string
     {
-        return config('llm-magic.apis.openai.token');
+		return app(TokenResolver::class)->resolve('openai');
     }
 
     protected function getOpenAiOrganization(): ?string
     {
-        return config('llm-magic.apis.openai.organization_id');
+		return app(TokenResolver::class)->resolve('openai', 'organization_id');
     }
 
     protected function getOpenAiBaseUri(): ?string
@@ -136,15 +136,6 @@ trait UsesOpenAiApi
                         ->filter(fn (ContentInterface $message) => !($message instanceof ToolUse || $message instanceof ToolResult))
                         ->values();
 
-					dump('MultimodalMessage', [
-						'content' => $content
-							->map(fn (ContentInterface $message) => match ($message::class) {
-								Text::class => null,
-								Base64Image::class => $message->mime
-							})
-							->toArray(),
-					]);
-
                     return array_filter([
                         ...$tools,
                         $content->isNotEmpty()
@@ -195,6 +186,7 @@ trait UsesOpenAiApi
      */
     public function stream(Prompt $prompt, ?Closure $onMessageProgress = null, ?Closure $onMessage = null, ?Closure $onTokenStats = null, ?Closure $onDataPacket = null): MessageCollection
     {
+		$cost = $this->getModelCost();
 		$messages = $this->prepareMessages(messages: $prompt->messages());
         $tools = $this->prepareTools($prompt->tools());
 
@@ -230,8 +222,6 @@ trait UsesOpenAiApi
                 ->chat()
                 ->createStreamed($data);
 
-            $cost = $this->getModelCost();
-
             $decoder = new OpenAiResponseDecoder(
                 $stream,
                 $onMessageProgress,
@@ -243,7 +233,7 @@ trait UsesOpenAiApi
                         : $stats
                     )
                     : $stats,
-                json: $prompt->shouldParseJson()
+                json: method_exists($prompt, 'shouldParseJson') && $prompt->shouldParseJson()
             );
 
             return MessageCollection::make($decoder->process());

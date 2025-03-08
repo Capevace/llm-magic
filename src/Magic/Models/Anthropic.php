@@ -97,7 +97,7 @@ class Anthropic extends ElElEm
         );
     }
 
-    public static function models(?string $prefix = 'anthropic', ?string $prefixLabels = 'Claude API'): Collection
+    public static function models(?string $prefix = 'anthropic', ?string $prefixLabels = 'Anthropic'): Collection
     {
         return static::prefixModels([
             static::HAIKU => 'Claude 3 Haiku',

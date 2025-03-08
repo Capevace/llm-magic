@@ -20,12 +20,6 @@ interface Prompt
      */
     public function tools(): array;
 
-    /**
-     * Wether to parse the output as JSON.
-     * @return bool
-     */
-    public function shouldParseJson(): bool;
-
 	/**
 	 * The tool to use / force.
      */

@@ -13,11 +13,15 @@ use Mateffy\Magic\Embeddings\OpenAIEmbeddings;
 use Mateffy\Magic\Exceptions\ToolCallException;
 use Mateffy\Magic\Exceptions\UnableToActAsFunction;
 use Mateffy\Magic\Exceptions\UnknownInferenceException;
-use Mateffy\Magic\Memory\MagicMemory;
+use Mateffy\Magic\Extraction\Strategies\ParallelStrategy;
+use Mateffy\Magic\Extraction\Strategies\SequentialStrategy;
+use Mateffy\Magic\Extraction\Strategies\SimpleStrategy;
+use Mateffy\Magic\Extraction\Strategies\Strategy;
 use Mateffy\Magic\Models\Anthropic;
 use Mateffy\Magic\Models\ElElEm;
 use Mateffy\Magic\Models\Gemini;
 use Mateffy\Magic\Models\LLM;
+use Mateffy\Magic\Models\Mistral;
 use Mateffy\Magic\Models\OpenAI;
 use Mateffy\Magic\Models\OpenRouter;
 use Mateffy\Magic\Models\TogetherAI;
@@ -162,12 +166,17 @@ class Magic
         return new ToolCallException($message, $code, $previous);
     }
 
+	/**
+	 * Get all the registered models in a {model_key: model_label} format
+	 * @return Collection<string, string>
+	 */
     public static function models(): Collection
     {
         return collect([
             ...Anthropic::models(),
             ...OpenAI::models(),
 			...Gemini::models(),
+			...Mistral::models(),
 			...OpenRouter::models(),
             ...TogetherAI::models(),
         ])
@@ -188,4 +197,18 @@ class Magic
     {
         return ElElEm::fromString(self::defaultModelName());
     }
+
+	/**
+	 * @return Collection<string, class-string<Strategy>>
+	 */
+	public static function getExtractionStrategies(): Collection
+	{
+		return collect([
+			'simple' => SimpleStrategy::class,
+			'sequential' => SequentialStrategy::class,
+			'parallel' => ParallelStrategy::class,
+//			'parallel-auto-merge' => ParallelStrategy::class,
+//			'double-pass' => ParallelStrategy::class,
+		]);
+	}
 }

@@ -5,7 +5,7 @@ namespace Mateffy\Magic\Extraction\Parsers;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Mateffy\Magic\Artifacts\ArtifactGenerationFailed;
+use Mateffy\Magic\Extraction\Artifacts\ArtifactType;
 use Mateffy\Magic\Support\PythonRunner;
 
 class PdfParser
@@ -16,6 +16,14 @@ class PdfParser
     public function __construct(
         protected string $path,
         protected ?string $disk = null,
+
+		/**
+		 * If the PDF we're parsing has been generated from a different type of artifact, we can pass this here.
+		 * This is then put into the metadata.json artifact to allow to correctly re-generate the artifact.
+		 */
+		protected ArtifactType $originalType = ArtifactType::Pdf,
+		protected string $mime = 'application/pdf',
+		protected ?string $originalFilename = null,
     )
     {
         $this->outputDir = sys_get_temp_dir() . '/' . Str::random(40);
@@ -36,19 +44,21 @@ class PdfParser
         }
     }
 
-    /**
-     * @throws ArtifactGenerationFailed
-     */
-    public function parse(): string
+    public function parse(string $id): string
     {
         $this->ensureFileDownloaded();
 
         File::ensureDirectoryExists($this->outputDir);
+
 		$safeFile = escapeshellarg($this->localPath);
+		$id = escapeshellarg($id);
+		$artifact_type = escapeshellarg($this->originalType->value);
+		$mime = escapeshellarg($this->mime);
+		$filename = escapeshellarg($this->originalFilename);
 
 		$runner = new PythonRunner(
 			script: 'prepare-pdf.py',
-			args: "{$this->outputDir} {$safeFile} -- --json",
+			args: "{$this->outputDir} {$safeFile} {$id} {$artifact_type} {$mime} {$filename} -- --json",
 		);
 
 		$runner->execute();

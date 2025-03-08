@@ -5,7 +5,7 @@ namespace Mateffy\Magic\Chat\Prompt;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Blade;
 use Mateffy\Magic\Chat\Messages\MultimodalMessage\Base64Image;
-use Mateffy\Magic\Extraction\Artifact;
+use Mateffy\Magic\Extraction\Artifacts\Artifact;
 use Mateffy\Magic\Extraction\ContextOptions;
 use Mateffy\Magic\Extraction\Slices\EmbedSlice;
 use Mateffy\Magic\Extraction\Slices\RawTextSlice;
@@ -15,8 +15,8 @@ class ArtifactPromptFormatter
 {
 	public function __construct(
 		/** @var Collection<Artifact> */
-		protected Collection      $artifacts,
-		protected ?ContextOptions $filter = null,
+		protected Collection $artifacts,
+		protected ContextOptions $contextOptions,
 	)
 	{
 	}
@@ -26,12 +26,12 @@ class ArtifactPromptFormatter
 	 *
 	 * @param Collection<Artifact>|array<Artifact> $artifacts
 	 */
-	public static function formatText(Collection|array $artifacts, ?ContextOptions $filter = null): string
+	public static function formatText(Collection|array $artifacts, ContextOptions $contextOptions): string
 	{
 		// We use Laravel Service container to enable dependency injection of custom classes by the end user, if wanted
 		$formatter = app(ArtifactPromptFormatter::class, [
 			'artifacts' => Collection::wrap($artifacts),
-			'filter' => $filter,
+			'contextOptions' => $contextOptions,
 		]);
 
 		return $formatter->toXML();
@@ -41,12 +41,12 @@ class ArtifactPromptFormatter
 	 * Format the embedded slices of the artifacts as Base64 images
 	 * @return Collection<Base64Image>
 	 */
-	public static function formatImagesAsBase64(Collection|array $artifacts, ?ContextOptions $filter = null): Collection
+	public static function formatImagesAsBase64(Collection|array $artifacts, ContextOptions $contextOptions): Collection
 	{
 		// We use Laravel Service container to enable dependency injection of custom classes by the end user, if wanted
 		$formatter = app(ArtifactPromptFormatter::class, [
 			'artifacts' => Collection::wrap($artifacts),
-			'filter' => $filter,
+			'contextOptions' => $contextOptions,
 		]);
 
 		return $formatter->convertEmbedsToBase64();
@@ -57,27 +57,51 @@ class ArtifactPromptFormatter
 	 *
 	 * @return Collection<string>
 	 */
-	public function formatTextSlicesAsXML(): Collection
+	public function formatTextSlicesAsXML(bool $includeImageReferences = true): Collection
 	{
 		return collect($this->artifacts)
-            ->map(function (Artifact $artifact) {
-                $pages = $artifact->getContents(filter: $this->filter)
-                    ->filter(fn ($content) => $content instanceof RawTextSlice)
-                    ->groupBy(fn (RawTextSlice $content) => $content->page ?? 0)
-                    ->sortBy(fn (Collection $contents, $page) => $page)
+            ->map(function (Artifact $artifact) use ($includeImageReferences) {
+                $pages = $artifact->getContents(contextOptions: $this->contextOptions)
+                    ->filter(fn ($content) => $content instanceof RawTextSlice || ($includeImageReferences && $content instanceof EmbedSlice && $content->getType()->isNormalImage()))
+                    ->groupBy(fn (Slice $content) => $content->getPage() ?? 0)
+                    ->sortBy(fn (Collection $contents, int $page) => $page)
                     ->values()
-                    ->flatMap(fn (Collection $contents) => collect($contents)
-                        ->map(fn (RawTextSlice $content) => Blade::render("<page num=\"{{ \$content->page }}\">\n{{ \$content->text }}\n</page>", ['content' => $content]))
+                    ->map(fn (Collection $contents, int $page) =>
+						Blade::render(
+							"<page num={{ \$page }}>\n{!! \$elements !!}\n</page>",
+							[
+								'page' => $page,
+								'elements' => $contents
+									->map(fn ($content) => match (true) {
+										$content instanceof RawTextSlice => Blade::render(
+											"<text>\n{{ \$text }}\n</text>",
+											['text' => $content->text()]
+										),
+										$content instanceof EmbedSlice => Blade::render(
+											'<image ref="{{ $ref }}" />',
+											[
+												'ref' => "artifact:{$artifact->getMetadata()->id}/" . ($content->getUnmodifiedPath() ?? $content->getPath()),
+											]
+										),
+										default => null,
+									})
+									->join("\n"),
+							]
+						)
                     )
                     ->join("\n\n");
 
                 return Blade::render(
                     <<<'BLADE'
-                    <artifact name="{{ $name }}" >
+                    <artifact id="{{ $id }}" name="{{ $name }}">
                     {!! $pages !!}
                     </artifact>
                     BLADE,
-                    ['name' => $artifact->getMetadata()->name, 'pages' => $pages]
+                    [
+						'id' => $artifact->getMetadata()->id,
+						'name' => $artifact->getMetadata()->name,
+						'pages' => $pages
+					]
                 );
             })
             ->values();
@@ -92,7 +116,7 @@ class ArtifactPromptFormatter
 	{
 		return collect($this->artifacts)
 			->flatMap(function (Artifact $artifact) {
-				return $artifact->getContents(filter: $this->filter)
+				return $artifact->getContents(contextOptions: $this->contextOptions)
 						->filter(fn (Slice $content) => $content instanceof EmbedSlice)
 						->groupBy(fn (EmbedSlice $content) => $content->getPage() ?? 0)
 						->sortBy(fn (Collection $slices, $page) => $page)

@@ -3,6 +3,7 @@
 namespace Mateffy\Magic\Models;
 
 use Illuminate\Support\Collection;
+use Mateffy\Magic\Support\ApiTokens\TokenResolver;
 use Mateffy\Magic\Models\Options\ElElEmOptions;
 use Mateffy\Magic\Models\Options\Organization;
 use Mateffy\Magic\Models\Providers\UsesOpenAiApi;
@@ -66,12 +67,12 @@ class OpenRouter extends ElElEm
 
     protected function getOpenAiApiKey(): string
     {
-        return config('llm-magic.apis.openrouter.token');
+        return app(TokenResolver::class)->resolve('openrouter');
     }
 
     protected function getOpenAiBaseUri(): ?string
     {
-        return config('llm-magic.apis.openrouter.url');
+        return 'openrouter.ai/api/v1';
     }
 
     public function __construct(

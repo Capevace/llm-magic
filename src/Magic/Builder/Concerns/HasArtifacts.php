@@ -2,8 +2,8 @@
 
 namespace Mateffy\Magic\Builder\Concerns;
 
-use Mateffy\Magic\Extraction\Artifact;
-use Mateffy\Magic\Extraction\DiskArtifact;
+use Mateffy\Magic\Extraction\Artifacts\Artifact;
+use Mateffy\Magic\Extraction\Artifacts\DiskArtifact;
 
 trait HasArtifacts
 {

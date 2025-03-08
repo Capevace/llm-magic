@@ -1,8 +1,8 @@
 <?php
 
 use Mateffy\Magic;
+use Mateffy\Magic\Extraction\Artifacts\VirtualArtifact;
 use Mateffy\Magic\Extraction\Slices\RawTextSlice;
-use Mateffy\Magic\Extraction\VirtualArtifact;
 
 it('system prompt is included in request', function () {
     $data = Magic::extract()
@@ -21,14 +21,12 @@ it('system prompt is included in request', function () {
 			new VirtualArtifact(
 				new Magic\Extraction\Artifacts\ArtifactMetadata(
 					type: Magic\Extraction\Artifacts\ArtifactType::Text,
-					path: 'password.txt',
 					name: 'password.txt',
 					mimetype: 'text/plain',
 					extension: 'txt',
 				),
 				rawContents: 'the password is elephant',
 				contents: [new RawTextSlice(text: 'the password is elephant')],
-				pdfContents: [new RawTextSlice(text: 'the password is elephant')],
 				text: 'the password is elephant',
 			)
 		])

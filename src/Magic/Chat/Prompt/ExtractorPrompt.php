@@ -2,18 +2,12 @@
 
 namespace Mateffy\Magic\Chat\Prompt;
 
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Blade;
 use Mateffy\Magic\Chat\Messages\MultimodalMessage;
-use Mateffy\Magic\Chat\Messages\TextMessage;
-use Mateffy\Magic\Chat\ToolChoice;
-use Mateffy\Magic\Extraction\Artifact;
-use Mateffy\Magic\Extraction\ContextOptions;
-use Mateffy\Magic\Extraction\Extractor;
-use Mateffy\Magic\Extraction\Slices\RawTextSlice;
-use Mateffy\Magic\Extraction\Slices\Slice;
-use Mateffy\Magic\Extraction\Slices\TextualSlice;
 use Mateffy\Magic\Chat\Prompt;
+use Mateffy\Magic\Chat\ToolChoice;
+use Mateffy\Magic\Extraction\Artifacts\Artifact;
+use Mateffy\Magic\Extraction\ContextOptions;
+use Mateffy\Magic\Extraction\Strategies\Extractor;
 use Mateffy\Magic\Tools\Prebuilt\Extract;
 
 class ExtractorPrompt implements Prompt
@@ -24,7 +18,7 @@ class ExtractorPrompt implements Prompt
         /** @var Artifact[] $artifacts */
         protected array $artifacts,
 
-		public ContextOptions $filter
+		public ContextOptions $contextOptions
     ) {}
 
     public function system(): string
@@ -106,7 +100,7 @@ class ExtractorPrompt implements Prompt
 
     public function prompt(): string
     {
-        $artifacts = ArtifactPromptFormatter::formatText($this->artifacts, filter: $this->filter);
+        $artifacts = ArtifactPromptFormatter::formatText($this->artifacts, contextOptions: $this->contextOptions);
 
         return <<<TXT
         <artifacts>
@@ -120,8 +114,7 @@ class ExtractorPrompt implements Prompt
     public function messages(): array
     {
 		$images = ArtifactPromptFormatter::formatImagesAsBase64(
-			artifacts: $this->artifacts,
-			filter: $this->filter
+			artifacts: $this->artifacts, contextOptions: $this->contextOptions
 		);
 
         return [

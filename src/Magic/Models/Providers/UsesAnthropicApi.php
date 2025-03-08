@@ -22,11 +22,12 @@ use Mateffy\Magic\Chat\Messages\MultimodalMessage\Text;
 use Mateffy\Magic\Chat\Messages\MultimodalMessage\ToolResult;
 use Mateffy\Magic\Chat\Messages\MultimodalMessage\ToolUse;
 use Mateffy\Magic\Chat\Messages\TextMessage;
+use Mateffy\Magic\Chat\Prompt;
 use Mateffy\Magic\Chat\TokenStats;
 use Mateffy\Magic\Chat\ToolChoice;
 use Mateffy\Magic\Exceptions\InvalidRequest;
 use Mateffy\Magic\Exceptions\TooManyTokensForModelRequested;
-use Mateffy\Magic\Chat\Prompt;
+use Mateffy\Magic\Support\ApiTokens\TokenResolver;
 use Mateffy\Magic\Models\Decoders\ClaudeResponseDecoder;
 use Mateffy\Magic\Tools\InvokableTool;
 
@@ -34,7 +35,7 @@ trait UsesAnthropicApi
 {
     protected function getApiToken(): string
     {
-        return config('llm-magic.apis.anthropic.token');
+        return app(TokenResolver::class)->resolve('anthropic');
     }
 
 	protected function createClient(): Client
@@ -109,8 +110,8 @@ trait UsesAnthropicApi
 	protected function prepareTools(array $tools): Collection
 	{
 		return collect($tools)
-			->map(fn (InvokableTool $function) => [
-				'name' => $function->name(),
+			->map(fn (InvokableTool $function, string|int $key) => [
+			'name' => $function->name(),
 				'description' => method_exists($function, 'description') ? $function->description() : '',
 				'input_schema' => $function->schema(),
 			])
@@ -127,7 +128,7 @@ trait UsesAnthropicApi
 		$rawToolChoice = $prompt->toolChoice();
 		$toolChoice = match ($rawToolChoice) {
 			ToolChoice::Auto => null,
-			ToolChoice::Required => 'required',
+			ToolChoice::Required => ['type' => 'any'],
 			default => ['type' => 'tool', 'name' => $rawToolChoice],
 		};
 
@@ -158,7 +159,7 @@ trait UsesAnthropicApi
 						: $stats
 					)
 					: $stats,
-				json: $prompt->shouldParseJson()
+				json: method_exists($prompt, 'shouldParseJson') && $prompt->shouldParseJson()
 			);
 
 			return MessageCollection::make($decoder->process());

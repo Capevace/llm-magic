@@ -5,6 +5,7 @@ namespace Mateffy\Magic\Models;
 use Illuminate\Support\Collection;
 use Mateffy\Magic\Chat\MessageCollection;
 use Mateffy\Magic\Chat\Prompt;
+use Mateffy\Magic\Support\ApiTokens\TokenResolver;
 use Mateffy\Magic\Models\Options\ChatGptOptions;
 use Mateffy\Magic\Models\Options\ElElEmOptions;
 use Mateffy\Magic\Models\Options\Organization;
@@ -12,9 +13,11 @@ use Mateffy\Magic\Models\Providers\UsesOpenAiApi;
 
 class Gemini extends ElElEm
 {
-	public const GEMINI_1_5_FLASH = 'gemini-1.5-flash';
-	public const GEMINI_2_0_FLASH = 'gemini-2.0-flash';
-	public const GEMINI_2_0_FLASH_LITE = 'gemini-2.0-flash-lite-preview-02-05';
+	public const string GEMINI_1_5_FLASH = 'gemini-1.5-flash';
+	public const string GEMINI_1_5_FLASH_8B = 'gemini-1.5-flash-8b';
+	public const string GEMINI_1_5_PRO = 'gemini-1.5-pro';
+	public const string GEMINI_2_0_FLASH = 'gemini-2.0-flash';
+	public const string GEMINI_2_0_FLASH_LITE = 'gemini-2.0-flash-lite-preview-02-05';
 
     use UsesOpenAiApi;
 
@@ -35,7 +38,7 @@ class Gemini extends ElElEm
         );
     }
 
-	public static function models(?string $prefix = 'openai', ?string $prefixLabels = 'OpenAI API'): Collection
+	public static function models(?string $prefix = 'google', ?string $prefixLabels = 'Google'): Collection
     {
         return static::prefixModels([
             static::GEMINI_1_5_FLASH => 'Gemini 1.5 Flash',
@@ -46,7 +49,7 @@ class Gemini extends ElElEm
 
     protected function getOpenAiApiKey(): string
     {
-        return config('llm-magic.apis.gemini.token');
+        return app(TokenResolver::class)->resolve('google');
     }
 
     protected function getOpenAiOrganization(): ?string
@@ -91,5 +94,17 @@ class Gemini extends ElElEm
 			model: self::GEMINI_1_5_FLASH,
 			options: $options,
 		);
+	}
+
+	public function getModelCost(): ?ModelCost
+	{
+		return match ($this->model) {
+			self::GEMINI_1_5_FLASH => ModelCost::withPricePerMillion(inputPricePerMillion: 0.15, outputPricePerMillion: 0.6),
+			self::GEMINI_1_5_FLASH_8B => ModelCost::withPricePerMillion(inputPricePerMillion: 0.075, outputPricePerMillion: 0.3),
+			self::GEMINI_1_5_PRO => ModelCost::withPricePerMillion(inputPricePerMillion: 2.5, outputPricePerMillion: 10),
+			self::GEMINI_2_0_FLASH => ModelCost::withPricePerMillion(inputPricePerMillion: 0.1, outputPricePerMillion: 0.4),
+			self::GEMINI_2_0_FLASH_LITE => ModelCost::withPricePerMillion(inputPricePerMillion: 0.075, outputPricePerMillion: 0.3),
+			default => null,
+		};
 	}
 }

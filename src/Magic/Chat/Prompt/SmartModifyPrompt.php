@@ -65,23 +65,13 @@ class SmartModifyPrompt implements Prompt
 
     public function tools(): array
     {
-        return array_filter([$this->forceFunction()]);
-    }
-
-    public function forceFunction(): ?InvokableTool
-    {
-        return $this->shouldForceFunction
-            ? new ModifyData(schema: $this->schema)
-            : null;
-    }
-
-    public function shouldParseJson(): bool
-    {
-        return true;
+        return [
+			new ModifyData(schema: $this->schema)
+		];
     }
 
 	public function toolChoice(): ToolChoice|string
 	{
-		return ToolChoice::Auto;
+		return (new ModifyData(schema: $this->schema))->name();
 	}
 }

@@ -13,7 +13,6 @@ class GenerateStepLabelsPrompt implements Prompt
     public function __construct(
         protected string $instructions,
         protected ?string $schema = null,
-        protected bool $shouldForceFunction = true,
     ) {}
 
     public function system(): string
@@ -85,23 +84,13 @@ class GenerateStepLabelsPrompt implements Prompt
 
     public function tools(): array
     {
-        return array_filter([$this->forceFunction()]);
-    }
-
-    public function forceFunction(): ?InvokableTool
-    {
-        return $this->shouldForceFunction
-            ? new OutputStepLabels
-            : null;
-    }
-
-    public function shouldParseJson(): bool
-    {
-        return true;
+        return [
+			new OutputStepLabels
+		];
     }
 
 	public function toolChoice(): ToolChoice|string
 	{
-		return ToolChoice::Auto;
+		return (new OutputStepLabels)->name();
 	}
 }

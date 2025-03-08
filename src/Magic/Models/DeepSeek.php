@@ -4,6 +4,7 @@ namespace Mateffy\Magic\Models;
 
 use Mateffy\Magic\Chat\MessageCollection;
 use Mateffy\Magic\Chat\Prompt;
+use Mateffy\Magic\Support\ApiTokens\TokenResolver;
 use Mateffy\Magic\Models\Options\ChatGptOptions;
 use Mateffy\Magic\Models\Options\ElElEmOptions;
 use Mateffy\Magic\Models\Options\Organization;
@@ -32,7 +33,7 @@ class DeepSeek extends ElElEm
 
     protected function getOpenAiApiKey(): string
     {
-        return config('llm-magic.apis.deepseek.token');
+        return app(TokenResolver::class)->resolve('deepseek');
     }
 
     protected function getOpenAiOrganization(): ?string

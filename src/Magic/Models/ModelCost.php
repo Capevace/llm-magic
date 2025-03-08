@@ -88,4 +88,12 @@ readonly class ModelCost implements Arrayable
 
         return $pricePerMillionTokens / 10;
     }
+
+	public static function withPricePerMillion(float $inputPricePerMillion, float $outputPricePerMillion): ModelCost
+	{
+		return new ModelCost(
+			inputCentsPer1K: self::pricePerMillionToCentsPerThousands($inputPricePerMillion),
+			outputCentsPer1K: self::pricePerMillionToCentsPerThousands($outputPricePerMillion),
+		);
+	}
 }

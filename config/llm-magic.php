@@ -19,6 +19,10 @@ return [
         'base' => env('LLM_MAGIC_ARTIFACTS_BASE', storage_path('app/magic-artifacts')),
         'disk' => env('LLM_MAGIC_ARTIFACTS_DISK', 'artifacts'),
         'prefix' => env('LLM_MAGIC_ARTIFACTS_PREFIX', ''),
+
+		// This is the default max token count for an LLM model if it doesn't implement HasMaximumTokenCount.
+		// This is used in the ArtifactSplitter to determine the maximum token count for each split when using .
+		'default_max_tokens' => env('LLM_MAGIC_DEFAULT_MAX_TOKENS', 10000),
     ],
     'python' => [
         'cwd' => env('LLM_MAGIC_PYTHON_CWD', realpath(__DIR__ . '/../python')),
@@ -39,8 +43,10 @@ return [
         ],
         'openrouter' => [
             'token' => env('OPENROUTER_API_KEY'),
-            'url' => env('OPENROUTER_API_URL', 'https://openrouter.ai/api/v1'),
         ],
+		'mistral' => [
+			'token' => env('MISTRAL_API_KEY'),
+		],
         'togetherai' => [
             'token' => env('TOGETHERAI_API_KEY'),
         ],

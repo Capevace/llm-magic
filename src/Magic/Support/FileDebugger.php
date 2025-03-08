@@ -10,6 +10,9 @@ use Mateffy\Magic\Chat\Messages\Message;
 use Mateffy\Magic\Chat\TokenStats;
 use Mateffy\Magic\Support\Debugger\DebugEvent;
 
+/**
+ * The file debugger can be used to log LLM sessions to disk in order to help during development or debugging.
+ */
 class FileDebugger
 {
 	public const TOKEN_STATS = 'token_stats';

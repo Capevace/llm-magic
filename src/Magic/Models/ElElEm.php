@@ -5,12 +5,13 @@ namespace Mateffy\Magic\Models;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Mateffy\Magic\Models\Options\ElElEmOptions;
+use Mateffy\Magic\Models\Options\HasMaximumTokenCount;
 use Mateffy\Magic\Models\Options\Organization;
 
 /**
  * @template T of ElElEmOptions
  */
-abstract class ElElEm implements LLM
+abstract class ElElEm implements LLM, HasMaximumTokenCount
 {
     public function __construct(
         public readonly Organization $organization,
@@ -42,8 +43,15 @@ abstract class ElElEm implements LLM
 
     public function getModelName(): string
     {
-        return $this->model;
+		return $this->model;
     }
+
+	public function getModelLabel(): string
+	{
+		$models = static::models();
+
+        return $models["{$this->organization->id}/{$this->model}"] ?? $this->model;
+	}
 
     public function getModelCost(): ?ModelCost
     {
@@ -63,29 +71,18 @@ abstract class ElElEm implements LLM
                 'claude-3-sonnet' => new Anthropic(model: Anthropic::SONNET),
                 'claude-3-opus' => new Anthropic(model: Anthropic::OPUS),
                 'claude-3.5-sonnet' => new Anthropic(model: Anthropic::SONNET_3_5),
-                Anthropic::HAIKU,
-                Anthropic::SONNET,
-                Anthropic::OPUS,
-                Anthropic::SONNET_3_5 => new Anthropic(model: $model),
+                default => new Anthropic(model: $model),
             },
             'bedrock' => match ($model) {
                 'claude-3-haiku' => new Bedrock(model: Bedrock::HAIKU),
                 'claude-3-sonnet' => new Bedrock(model: Bedrock::SONNET),
                 'claude-3-opus' => new Bedrock(model: Bedrock::OPUS),
                 'claude-3.5-sonnet' => new Bedrock(model: Bedrock::SONNET_3_5),
-                Bedrock::HAIKU,
-                Bedrock::SONNET,
-                Bedrock::SONNET_3_5,
-                Bedrock::OPUS => new Bedrock(model: $model),
+                default => new Bedrock(model: $model),
             },
-            'openai' => match ($model) {
-                default => new OpenAI(model: str($model)->after('openai/')),
-            },
+            'openai' => new OpenAI(model: $model),
             'google' => new Gemini(model: $model),
-            'groq' => match (true) {
-                Str::startsWith($model, 'llama-') => new GroqLlama3(model: $model),
-                default => throw new \InvalidArgumentException("Invalid model type: {$value}"),
-            },
+			'mistral' => new Mistral(model: $model),
             default => throw new \InvalidArgumentException("Invalid model type: {$value}"),
         };
     }
@@ -124,4 +121,9 @@ abstract class ElElEm implements LLM
     {
         return static::prefixModels([], $prefix, $prefixLabels);
     }
+
+	public function getMaximumTokenCount(): int
+	{
+		return 32_000;
+	}
 }

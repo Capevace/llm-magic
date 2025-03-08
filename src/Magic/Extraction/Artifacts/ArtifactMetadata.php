@@ -9,7 +9,7 @@ class ArtifactMetadata
 {
     public function __construct(
         public ArtifactType $type,
-        public string $path,
+		public string $id,
         public string $name,
         public string $mimetype,
         public string $extension,
@@ -19,7 +19,7 @@ class ArtifactMetadata
     {
         return [
             'type' => $this->type->value,
-            'path' => $this->path,
+			'id' => $this->id,
             'name' => $this->name,
             'mimetype' => $this->mimetype,
             'extension' => $this->extension,
@@ -30,21 +30,36 @@ class ArtifactMetadata
     {
         return new static(
             type: ArtifactType::from($data['type']),
-            path: $data['path'],
+			id: $data['id'],
             name: $data['name'],
             mimetype: $data['mimetype'],
             extension: $data['extension'],
         );
     }
 
-    public static function fromPath(string $jsonPath): static
+	/**
+	 * @throws \JsonException
+	 */
+	public static function tryFromPath(string $jsonPath, ?string $disk = null): ?static
     {
-        $data = File::json($jsonPath, flags: JSON_THROW_ON_ERROR);
+		if ($disk) {
+			$disk = Storage::disk($disk);
 
-        return static::fromArray($data);
+			if ($disk->exists($jsonPath)) {
+				$json = json_decode($disk->get($jsonPath), true, flags: JSON_THROW_ON_ERROR);
+			}
+		} elseif (File::exists($jsonPath)) {
+			$json = File::json($jsonPath, flags: JSON_THROW_ON_ERROR);
+		}
+
+		if (isset($json)) {
+			return static::fromArray($json);
+		}
+
+        return null;
     }
 
-    public static function fromFile(string $path, ?string $disk = null): static
+    public static function fromFile(string $id, string $path, ?string $disk = null): static
     {
         $mimeType = $disk
             ? Storage::disk($disk)->mimeType($path)
@@ -52,7 +67,7 @@ class ArtifactMetadata
 
         return new self(
             type: ArtifactType::fromMimetype($mimeType),
-            path: $path,
+			id: $id,
             name: basename($path),
             mimetype: $mimeType,
             extension: pathinfo($path, PATHINFO_EXTENSION),

@@ -3,6 +3,7 @@
 namespace Mateffy\Magic\Models;
 
 use Illuminate\Support\Collection;
+use Mateffy\Magic\Support\ApiTokens\TokenResolver;
 use Mateffy\Magic\Models\Options\ElElEmOptions;
 use Mateffy\Magic\Models\Options\Organization;
 use Mateffy\Magic\Models\Providers\UsesOpenAiApi;
@@ -34,12 +35,12 @@ class TogetherAI extends ElElEm
 
     protected function getOpenAiApiKey(): string
     {
-        return config('llm-magic.apis.togetherai.token');
+        return app(TokenResolver::class)->resolve('togetherai');
     }
 
     protected function getOpenAiBaseUri(): ?string
     {
-        return config('llm-magic.apis.togetherai.url');
+        return 'api.together.xyz/v1';
     }
 
     public function __construct(
