@@ -5,6 +5,11 @@ namespace Mateffy\Magic\Tools\Prebuilt;
 use Mateffy\Magic;
 use Mateffy\Magic\Chat\Messages\FunctionCall;
 use Mateffy\Magic\Tools\InvokableTool;
+use Opis\JsonSchema\{
+    Validator,
+    ValidationResult,
+    Errors\ErrorFormatter,
+};
 
 class Extract implements InvokableTool
 {
@@ -29,6 +34,9 @@ class Extract implements InvokableTool
 
     public function validate(array $arguments): array
     {
+		if ($errors = app(Magic\Support\JsonValidator::class)->validate(data: $arguments, schema: $this->schema)) {
+
+		}
         return $arguments;
     }
 

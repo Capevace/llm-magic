@@ -3,6 +3,7 @@
 namespace Mateffy\Magic\Builder;
 
 use Mateffy\Magic\Builder\Concerns\HasArtifacts;
+use Mateffy\Magic\Builder\Concerns\HasAttempts;
 use Mateffy\Magic\Builder\Concerns\HasDebugger;
 use Mateffy\Magic\Builder\Concerns\HasMessageCallbacks;
 use Mateffy\Magic\Builder\Concerns\HasMessages;
@@ -20,11 +21,13 @@ use Mateffy\Magic\Chat\Messages\TextMessage;
 use Mateffy\Magic\Chat\Signals\EndConversation;
 use Mateffy\Magic\Chat\ToolChoice;
 use Mateffy\Magic\Chat\Prompt;
+use Mateffy\Magic\Exceptions\JsonSchemaValidationError;
 use Mateffy\Magic\Tools\InvokableTool;
 
 class ChatPreconfiguredModelBuilder
 {
     use HasArtifacts;
+	use HasAttempts;
 	use HasDebugger;
     use HasMessages;
     use HasModel;
@@ -80,8 +83,6 @@ class ChatPreconfiguredModelBuilder
                 if (count($current) > 0) {
                     $messages->push(new MultimodalMessage(role: $role, content: $current));
                 }
-
-//                dd($messages);
 
                 return $messages->all();
             }
@@ -192,13 +193,13 @@ class ChatPreconfiguredModelBuilder
                 if ($fn = $this->tools[$message->call->name] ?? null) {
                     /** @var InvokableTool $fn */
 
-                    $message->call->arguments = $fn->validate($message->call->arguments);
-
-                    if (!$ignoreInterrupts && $this->shouldInterrupt && ($this->shouldInterrupt)($message->call)) {
-                        return MessageCollection::make([$message]);
-                    }
-
                     try {
+						$message->call->arguments = $fn->validate($message->call->arguments);
+
+						if (!$ignoreInterrupts && $this->shouldInterrupt && ($this->shouldInterrupt)($message->call)) {
+							return MessageCollection::make([$message]);
+						}
+
                         $output = $fn->execute($message->call);
 
                         if ($output instanceof FunctionOutputMessage) {
@@ -210,7 +211,22 @@ class ChatPreconfiguredModelBuilder
                         } else {
                             $outputMessage = FunctionOutputMessage::output(call: $message->call, output: $output);
                         }
-                    } catch (\Throwable $e) {
+
+						// If we make it to this point, we consider whatever went on successful so we can reset the attempt counter
+						$this->resetAttempts();
+					} catch (JsonSchemaValidationError $e) {
+						// We use one attempt
+						$this->useAttempt();
+
+						$outputMessage = FunctionOutputMessage::error(call: $message->call, message: $e->getValidationErrorsAsJson());
+
+                        if ($this->onToolError) {
+                            ($this->onToolError)($e);
+                        }
+					} catch (\Throwable $e) {
+						// We use one attempt
+						$this->useAttempt();
+
                         $outputMessage = FunctionOutputMessage::error(call: $message->call, message: $e->getMessage());
 
                         if ($this->onToolError) {
@@ -237,8 +253,12 @@ class ChatPreconfiguredModelBuilder
             }
         }
 
-        // Immediately continue if
-        if ($continue && $messages->last() instanceof FunctionOutputMessage && !$messages->last()->endConversation) {
+		$lastMessageWasFunctionOutput = $messages->last() instanceof FunctionOutputMessage;
+		$lastMessageWasEndConversation = $lastMessageWasFunctionOutput && $messages->last()->endConversation;
+		$hasRunOutOfAttempts = $this->attemptsLeft <= 0;
+
+		// Immediately continue if the last message was a function output, it was not an end conversation signal and we haven't run out of attempts
+        if ($continue && $lastMessageWasFunctionOutput && !$lastMessageWasEndConversation && !$hasRunOutOfAttempts) {
             return MessageCollection::make([
                 ...$messages,
                 ...$this->stream()
