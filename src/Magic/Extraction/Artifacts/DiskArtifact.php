@@ -20,6 +20,7 @@ use Mateffy\Magic\Extraction\Slices\ImageSlice;
 use Mateffy\Magic\Extraction\Slices\RawTextSlice;
 use Mateffy\Magic\Extraction\Slices\Slice;
 use Mateffy\Magic\Extraction\Slices\TextualSlice;
+use Spatie\PdfToImage\Pdf;
 
 
 /**
@@ -141,6 +142,7 @@ class DiskArtifact implements Artifact
             ArtifactType::Image => $this->getFlatFileContents(),
             ArtifactType::Pdf => $this->getPdfContents(),
 			ArtifactType::RichTextDocument => $this->getDocumentContents(),
+			ArtifactType::Spreadsheet => $this->getSpreadsheetContents(),
             default => collect(),
         };
 
@@ -269,7 +271,7 @@ class DiskArtifact implements Artifact
 						$destinationPath = "{$this->artifactDir}/source.pdf";
 
 						// Warning: Docswap returns an absolute path here, NOT one relative to the disk.
-						// This is a nonsense decision on their part as the library works with disks everywhere else.
+						// This is a weird decision on their part as the library works with disks everywhere else.
 						// For this reason, we just read the file and write it back to the disk instead of using move operations...
 						$absoluteConvertedFilePath = $converter->convertFile($this->path, 'pdf');
 
@@ -334,30 +336,62 @@ class DiskArtifact implements Artifact
 					->map(fn (RawTextSlice $slice) => $slice->toArray())
 					->toArray();
 
-				$json = json_encode($slices, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-
                 if ($this->artifactDirDisk) {
                     $disk->makeDirectory($this->artifactDir);
 
+					try {
+						$converter = new ConversionService(
+							inputDisk: $this->disk,
+							outputDisk: $this->artifactDirDisk,
+						);
+						$destinationPath = "{$this->artifactDir}/thumbnail.pdf";
+
+						// Warning: Docswap returns an absolute path here, NOT one relative to the disk.
+						// This is a weird decision on their part as the library works with disks everywhere else.
+						// For this reason, we just read the file and write it back to the disk instead of using move operations...
+						$absoluteConvertedFilePath = $converter->convertFile($this->path, 'pdf');
+
+						try {
+							$readStream = fopen($absoluteConvertedFilePath, 'r');
+							$disk->writeStream($destinationPath, $readStream);
+						} finally {
+							if (isset($readStream)) {
+								fclose($readStream);
+							}
+
+							File::delete($absoluteConvertedFilePath);
+						}
+
+					} catch (Exception $e) {
+						throw new ArtifactGenerationFailed("Failed to convert document to JPG: {$e->getMessage()}");
+					} finally {
+						if (isset($absoluteConvertedFilePath) && File::exists($absoluteConvertedFilePath)) {
+							File::delete($absoluteConvertedFilePath);
+						}
+					}
+
+
+					if ($disk->exists("{$this->artifactDir}/thumbnail.pdf")) {
+						$disk->makeDirectory("{$this->artifactDir}/images");
+						$pdf = new Pdf($disk->path("{$this->artifactDir}/thumbnail.pdf"));
+						$pdf->save($disk->path("{$this->artifactDir}/images/image1.jpg"));
+
+						$slices[] = (new ImageSlice(
+							type: ContentType::Image,
+							mimetype: 'image/jpeg',
+							path: 'images/image1.jpg',
+						))->toArray();
+					}
+
 					$disk->put("{$this->artifactDir}/metadata.json", json_encode($this->getMetadata()->toArray(), JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT));
-                    $disk->put("{$this->artifactDir}/contents.json", $json);
+                    $disk->put("{$this->artifactDir}/contents.json", json_encode($slices, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
                     $disk->put("{$this->artifactDir}/source.{$this->getMetadata()->extension}", $this->getRawContents());
                 } else {
                     File::ensureDirectoryExists($this->artifactDir);
 					File::put("{$this->artifactDir}/metadata.json", json_encode($this->getMetadata()->toArray(), JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT));
-					File::put("{$this->artifactDir}/contents.json", json_encode([$slice->toArray()], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT));
+					File::put("{$this->artifactDir}/contents.json", json_encode($slices, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 					File::put("{$this->artifactDir}/source.{$this->getMetadata()->extension}", $this->getRawContents());
                 }
-
-				$slice = match ($this->getMetadata()->type) {
-					default => new RawTextSlice($this->getRawContents()),
-					ArtifactType::Image => new ImageSlice(
-						type: ContentType::Image,
-						mimetype: $this->getMetadata()->mimetype,
-						path: "source.{$this->getMetadata()->extension}",
-					)
-				};
-
             }
         }
 

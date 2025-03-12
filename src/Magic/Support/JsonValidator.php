@@ -25,6 +25,8 @@ class JsonValidator
 	 */
 	public function validate(array $data, array $schema): ?array
 	{
+		\Opis\JsonSchema\Helper::$useBCMath = false;
+
 		$validator = new Validator();
 		$validator->setMaxErrors(10);
 		$validator->setStopAtFirstError(false);

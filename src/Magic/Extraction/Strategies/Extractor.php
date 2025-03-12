@@ -3,7 +3,10 @@
 namespace Mateffy\Magic\Extraction\Strategies;
 
 use Closure;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Laravel\SerializableClosure\Serializers\Native;
 use Mateffy\Magic;
 use Mateffy\Magic\Chat\ActorTelemetry;
 use Mateffy\Magic\Chat\Messages\Message;
@@ -11,6 +14,8 @@ use Mateffy\Magic\Chat\Messages\TextMessage;
 use Mateffy\Magic\Chat\Prompt;
 use Mateffy\Magic\Chat\Prompt\Role;
 use Mateffy\Magic\Chat\TokenStats;
+use Mateffy\Magic\Extraction\ArtifactBatcher;
+use Mateffy\Magic\Extraction\Artifacts\Artifact;
 use Mateffy\Magic\Extraction\ContextOptions;
 use Mateffy\Magic\Models\LLM;
 
@@ -26,19 +31,22 @@ abstract class Extractor implements Strategy
 		public int $chunkSize,
 
 		/** @var ?Closure(array): void $onDataProgress */
-        protected ?Closure $onDataProgress,
+        protected null|Native|Closure $onDataProgress,
 
-        /** @var ?Closure(TokenStats): void $onTokenStats */
-        protected ?Closure $onTokenStats = null,
+        /** @var null|Native|Closure(TokenStats): void $onTokenStats */
+        protected null|Native|Closure $onTokenStats = null,
 
-        /** @var ?Closure(Message): void $onMessageProgress */
-        protected ?Closure $onMessageProgress = null,
+        /** @var null|Native|Closure(Message): void $onMessageProgress */
+        protected null|Native|Closure $onMessageProgress = null,
 
-        /** @var ?Closure(Message, string): void $onMessage */
-        protected ?Closure $onMessage = null,
+        /** @var null|Native|Closure(Message, string): void $onMessage */
+        protected null|Native|Closure $onMessage = null,
 
-        /** @var ?Closure(ActorTelemetry): void $onActorTelemetry */
-        protected ?Closure $onActorTelemetry = null,
+        /** @var null|Native|Closure(ActorTelemetry): void $onActorTelemetry */
+        protected null|Native|Closure $onActorTelemetry = null,
+
+		/** Provide some data that a strategy could use to get started with, if it exists. */
+		public ?array $initialData = null,
     ) {}
 
 	/**
@@ -59,6 +67,7 @@ abstract class Extractor implements Strategy
 		?Closure $onMessageProgress = null,
 		?Closure $onMessage = null,
 		?Closure $onActorTelemetry = null,
+		?array $initialData = null,
 	): static {
 		return new static(
 			llm: $llm,
@@ -71,6 +80,7 @@ abstract class Extractor implements Strategy
 			onMessageProgress: $onMessageProgress,
 			onMessage: $onMessage,
 			onActorTelemetry: $onActorTelemetry,
+			initialData: $initialData,
 		);
 	}
 
@@ -153,19 +163,23 @@ abstract class Extractor implements Strategy
 		}
 	}
 
-	protected function send(string $threadId, LLM $llm, Prompt $prompt): ?array
+	protected function send(string $threadId, LLM $llm, Prompt $prompt, bool $logDataProgress = true): ?array
 	{
 		$data = Magic::chat()
             ->model($llm)
             ->prompt($prompt)
-            ->onMessageProgress(function (Message $message) {
-				$this->logDataProgressFromMessage(message: $message);
+            ->onMessageProgress(function (Message $message) use ($logDataProgress) {
+				if ($logDataProgress) {
+					$this->logDataProgressFromMessage(message: $message);
+				}
+
                 $this->logMessageProgress(message: $message);
             })
-            ->onMessage(function (Message $message) use (&$messages, $threadId) {
-                $messages[] = $message;
+            ->onMessage(function (Message $message) use ($threadId, $logDataProgress) {
+				if ($logDataProgress) {
+					$this->logDataProgressFromMessage(message: $message);
+				}
 
-				$this->logDataProgressFromMessage(message: $message);
                 $this->logMessage(message: $message, threadId: $threadId);
             })
             ->onTokenStats(function (TokenStats $tokenStats) use (&$lastTokenStats) {
@@ -176,10 +190,30 @@ abstract class Extractor implements Strategy
             ->stream()
 			->lastData();
 
-		if ($data) {
+		if ($data && $logDataProgress) {
 			$this->logDataProgress(data: $data);
 		}
 
+		if (is_string($data)) {
+			Log::critical("Received data is a string", ['data' => $data]);
+		}
+
 		return $data;
+	}
+
+	/**
+	 * Batch the artifacts into smaller chunks to avoid hitting the token limit.
+	 *
+	 * @param Artifact[] $artifacts
+	 * @return Collection<Collection<Artifact>>
+	 */
+	protected function getBatches(array $artifacts): Collection
+	{
+		return ArtifactBatcher::batch(
+			artifacts: $artifacts,
+			options: $this->contextOptions,
+			maxTokens: $this->chunkSize,
+			llm: $this->llm
+		);
 	}
 }

@@ -6,6 +6,7 @@ use Closure;
 use Mateffy\Magic\Chat\ActorTelemetry;
 use Mateffy\Magic\Chat\Messages\Message;
 use Mateffy\Magic\Chat\TokenStats;
+use Mateffy\Magic\Extraction\Artifacts\Artifact;
 use Mateffy\Magic\Extraction\ContextOptions;
 use Mateffy\Magic\Models\LLM;
 
@@ -36,5 +37,13 @@ interface Strategy
 
 	public static function getLabel(): string;
 
+	/**
+	 * @param Artifact[] $artifacts
+	 */
+	public function getEstimatedSteps(array $artifacts): int;
+
+	/**
+	 * @param Artifact[] $artifacts
+	 */
     public function run(array $artifacts): array;
 }

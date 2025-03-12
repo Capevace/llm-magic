@@ -135,6 +135,6 @@ class SpreadsheetParser
 
         $wrapChunk(); // Wrap any remaining data in the last chunk
 
-		return $chunks;
+		return $chunks->flatten(1);
 	}
 }

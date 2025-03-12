@@ -2,7 +2,7 @@
 
 namespace Mateffy\Magic\Models\Options;
 
-readonly class ChatGptOptions extends ElElEmOptions
+class ChatGptOptions extends ElElEmOptions
 {
     public function __construct(
         int $maxTokens = ElElEmOptions::DEFAULT_MAX_TOKENS,

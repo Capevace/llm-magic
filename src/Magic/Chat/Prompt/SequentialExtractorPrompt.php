@@ -96,8 +96,6 @@ class SequentialExtractorPrompt implements Prompt
             $previousData = null;
         }
 
-		Log::info('previousData', ['previous' => $previousData]);
-
         return <<<TXT
         {$artifacts}
 

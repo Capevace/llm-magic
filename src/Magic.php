@@ -13,7 +13,10 @@ use Mateffy\Magic\Embeddings\OpenAIEmbeddings;
 use Mateffy\Magic\Exceptions\ToolCallException;
 use Mateffy\Magic\Exceptions\UnableToActAsFunction;
 use Mateffy\Magic\Exceptions\UnknownInferenceException;
+use Mateffy\Magic\Extraction\Strategies\DoublePassStrategy;
+use Mateffy\Magic\Extraction\Strategies\ParallelAutoMergeStrategy;
 use Mateffy\Magic\Extraction\Strategies\ParallelStrategy;
+use Mateffy\Magic\Extraction\Strategies\SequentialAutoMergeStrategy;
 use Mateffy\Magic\Extraction\Strategies\SequentialStrategy;
 use Mateffy\Magic\Extraction\Strategies\SimpleStrategy;
 use Mateffy\Magic\Extraction\Strategies\Strategy;
@@ -206,9 +209,10 @@ class Magic
 		return collect([
 			'simple' => SimpleStrategy::class,
 			'sequential' => SequentialStrategy::class,
+			'sequential-auto-merge' => SequentialAutoMergeStrategy::class,
 			'parallel' => ParallelStrategy::class,
-//			'parallel-auto-merge' => ParallelStrategy::class,
-//			'double-pass' => ParallelStrategy::class,
+			'parallel-auto-merge' => ParallelAutoMergeStrategy::class,
+			'double-pass' => DoublePassStrategy::class,
 		]);
 	}
 }

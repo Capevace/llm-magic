@@ -14,8 +14,8 @@ use Mateffy\Magic\Models\Options\Organization;
 abstract class ElElEm implements LLM, HasMaximumTokenCount
 {
     public function __construct(
-        public readonly Organization $organization,
-        public readonly string $model,
+        public Organization $organization,
+        public string $model,
 
         /** @var T $options */
         public ElElEmOptions $options,

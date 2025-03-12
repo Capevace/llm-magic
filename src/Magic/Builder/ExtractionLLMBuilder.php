@@ -14,7 +14,6 @@ use Mateffy\Magic\Builder\Concerns\HasSchema;
 use Mateffy\Magic\Builder\Concerns\HasStrategy;
 use Mateffy\Magic\Builder\Concerns\HasTokenCallback;
 use Mateffy\Magic\Builder\Concerns\HasTools;
-use Mateffy\Magic\Extraction\Strategies\Strategy;
 
 class ExtractionLLMBuilder
 {
@@ -32,21 +31,7 @@ class ExtractionLLMBuilder
 
     public function stream(): Collection
     {
-        $strategyClass = $this->getStrategyClass();
-
-        /** @var Strategy $strategy */
-        $strategy = $strategyClass::make(
-            llm: $this->model,
-			contextOptions: $this->getContextOptions(),
-			outputInstructions: $this->outputInstructions,
-			schema: $this->schema,
-			chunkSize: $this->getChunkSize(),
-			onDataProgress: $this->onDataProgress,
-			onTokenStats: $this->onTokenStats,
-			onMessageProgress: $this->onMessageProgress,
-			onMessage: $this->onMessage,
-			onActorTelemetry: $this->onActorTelemetry,
-        );
+		$strategy = $this->makeStrategy();
 
         $result = $strategy->run($this->artifacts);
 
@@ -55,6 +40,10 @@ class ExtractionLLMBuilder
 
     public function send(): Collection
     {
-        return collect();
+		$strategy = $this->makeStrategy();
+
+        $result = $strategy->run($this->artifacts);
+
+        return collect($result);
     }
 }

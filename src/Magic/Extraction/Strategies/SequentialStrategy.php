@@ -2,24 +2,19 @@
 
 namespace Mateffy\Magic\Extraction\Strategies;
 
-use Illuminate\Support\Collection;
-use Mateffy\Magic\Chat\Prompt\SequentialExtractorPrompt;
-use Mateffy\Magic\Extraction\ArtifactBatcher;
 use Mateffy\Magic\Extraction\Artifacts\Artifact;
+use Mateffy\Magic\Extraction\Strategies\Concerns\GenerateWithBatchedPrompt;
 
 class SequentialStrategy extends Extractor
 {
+	use GenerateWithBatchedPrompt;
+
     /**
      * @param  Artifact[]  $artifacts
      */
     public function run(array $artifacts): array
     {
-        $batches = ArtifactBatcher::batch(
-			artifacts: $artifacts,
-			options: $this->contextOptions,
-			maxTokens: $this->chunkSize,
-			llm: $this->llm
-		);
+        $batches = $this->getBatches(artifacts: $artifacts);
 
         $data = null;
 
@@ -32,27 +27,13 @@ class SequentialStrategy extends Extractor
         return $data;
     }
 
-    protected function generate(Collection $artifacts, ?array $previousData): array
-    {
-        $prompt = new SequentialExtractorPrompt(
-			extractor: $this,
-			artifacts: $artifacts->all(), contextOptions: $this->contextOptions,
-			previousData: $previousData,
-		);
-
-        $threadId = $this->createActorThread(llm: $this->llm, prompt: $prompt);
-
-        $data = $this->send(
-			threadId: $threadId,
-			llm: $this->llm,
-			prompt: $prompt
-		);
-
-		return $data ?? $previousData;
-    }
-
 	public static function getLabel(): string
 	{
 		return __('Sequential');
+	}
+
+	public function getEstimatedSteps(array $artifacts): int
+	{
+		return $this->getBatches(artifacts: $artifacts)->count();
 	}
 }

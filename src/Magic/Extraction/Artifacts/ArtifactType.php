@@ -9,6 +9,7 @@ enum ArtifactType: string
     case Image = 'image';
     case Pdf = 'pdf';
 	case RichTextDocument = 'rich-text-document';
+	case Spreadsheet = 'spreadsheet';
 
 	public function getLabel(): string
 	{
@@ -18,6 +19,7 @@ enum ArtifactType: string
 			self::Image => 'Image',
 			self::Pdf => 'PDF',
 			self::RichTextDocument => 'Text Document',
+			self::Spreadsheet => 'Spreadsheet',
 		};
 	}
 
@@ -37,6 +39,11 @@ enum ArtifactType: string
 				'application/vnd.ms-powerpoint',
 				'application/vnd.oasis.opendocument.presentation',
 			]) => self::RichTextDocument,
+			$str->startsWith([
+				'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+				'application/vnd.ms-excel',
+				'application/vnd.oasis.opendocument.spreadsheet',
+			]) => self::Spreadsheet,
             default => self::Unknown,
         };
     }

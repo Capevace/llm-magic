@@ -2,7 +2,7 @@
 
 namespace Mateffy\Magic\Models\Options;
 
-readonly class ElElEmOptions
+class ElElEmOptions
 {
     public const DEFAULT_MAX_TOKENS = 4096;
 

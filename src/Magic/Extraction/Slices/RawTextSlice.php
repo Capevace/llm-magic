@@ -15,6 +15,7 @@ readonly class RawTextSlice implements Slice, TextualSlice
     public function toArray(): array
     {
         return [
+			'type' => 'text',
             'text' => $this->text,
             'embeds' => $this->embeds,
             'page' => $this->page,
