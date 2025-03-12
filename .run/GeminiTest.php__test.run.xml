@@ -1,8 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="GeminiTest.php::test" type="PestRunConfigurationType">
-    <option name="pestRunnerSettings">
-      <PestRunner file="$PROJECT_DIR$/tests/Unit/Providers/GeminiTest.php" method="test" scope="Method" />
-    </option>
-    <method v="2" />
-  </configuration>
-</component>
