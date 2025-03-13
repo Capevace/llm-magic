@@ -3,6 +3,7 @@
 namespace Mateffy\Magic\Extraction\Strategies;
 
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Mateffy\Magic\Extraction\ArtifactBatcher;
 use Mateffy\Magic\Extraction\Artifacts\Artifact;
 use Mateffy\Magic\Extraction\Strategies\Concerns\GenerateWithBatchedPrompt;
@@ -48,6 +49,13 @@ class ParallelAutoMergeStrategy extends Extractor
 			} else {
 				$mergedData = $data;
 			}
+		}
+
+		if ($mergedData === null) {
+			Log::warning('No data was merged.', [
+				'extractor' => static::class,
+				'model' => $this->llm->getModelName()
+			]);
 		}
 
 		// Run an initial de-duplication based on hashing. Finds only exact 1:1 duplicates.

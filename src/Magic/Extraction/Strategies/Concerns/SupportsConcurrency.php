@@ -54,7 +54,6 @@ trait SupportsConcurrency
 			foreach ($concurrentBatches as $batch) {
 				Async::run(function () use ($batch, $execute) {
 					$result = $execute($batch);
-//					Log::critical('result', ['result' => $result]);
 
 					return $result;
 				});
