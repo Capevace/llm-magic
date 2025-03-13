@@ -5,6 +5,7 @@ namespace Mateffy\Magic\Extraction\Strategies\Concerns;
 use Closure;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Mateffy\Magic\Extraction\Artifacts\Artifact;
 use VXM\Async\AsyncFacade as Async;
 
@@ -49,11 +50,19 @@ trait SupportsConcurrency
 		// We again chunk the batches into groups of $concurrency.
 		$concurrentSteps = $batches->chunk($concurrency);
 
+		$id = Str::uuid()->toString();
+
 		// Run the concurrent steps. We split the batches into groups of $concurrency and run them concurrently to not cause any memory issues.
-		foreach ($concurrentSteps as $concurrentBatches) {
-			foreach ($concurrentBatches as $batch) {
-				Async::run(function () use ($batch, $execute) {
+		foreach ($concurrentSteps as $stepIndex => $concurrentBatches) {
+			foreach ($concurrentBatches as $batchIndex => $batch) {
+				Async::run(function () use ($id, $stepIndex, $batchIndex, $batch, $execute) {
 					$result = $execute($batch);
+
+					// There seems to be problems with memory limits when running this in Docker containers.
+					// If the output data is too large to be returned, it is droppped quietly.
+					// I have yet to find a satisfying solution to this.
+					// As a workaround, we don't use the returned data, but instead store it in the cache and retrieve it later.
+					cache()->put("{$id}-{$stepIndex}-{$batchIndex}", $result);
 
 					return $result;
 				});
@@ -76,6 +85,21 @@ trait SupportsConcurrency
 				$results->push($result);
 			}
 		}
+
+		// To retrieve the results, we need to fetch them from the cache.
+		// This is a workaround for the memory issues we are facing.
+		$ids = collect();
+
+		foreach ($concurrentSteps as $stepIndex => $concurrentBatches) {
+			foreach ($concurrentBatches as $batchIndex => $batch) {
+				$ids->push("{$id}-{$stepIndex}-{$batchIndex}");
+			}
+		}
+
+		// With all the IDs, we can now retrieve the results from the cache.
+		$results = $ids
+			->map(fn($id) => cache()->pull($id))
+			->filter();
 
 		return $results;
 	}
