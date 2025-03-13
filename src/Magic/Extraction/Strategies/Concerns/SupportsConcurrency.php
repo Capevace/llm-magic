@@ -15,11 +15,13 @@ trait SupportsConcurrency
 	 *
 	 * @param Collection<Collection<Artifact>> $batches
 	 * @param Closure(Collection<Artifact>): ?array $execute The function that does the LLM call.
-	 * @param Closure(array): void $process The function to process each resulting data array.
+	 * @param null|Closure(array): void $process The function to process each resulting data array.
 	 */
-	protected function runConcurrently(Collection $batches, Closure $execute, Closure $process): void
+	protected function runConcurrently(Collection $batches, Closure $execute, ?Closure $process = null): Collection
 	{
-		$concurrency = config('llm-magic.extraction.concurrency', 1);
+		$concurrency = config('llm-magic.extraction.concurrency');
+
+		$results = collect();
 
 		// If concurrency is 1 or less, consider it disabled.
 		if ($concurrency <= 1) {
@@ -35,9 +37,11 @@ trait SupportsConcurrency
 
 				// Process the result.
 				$process($data);
+
+				$results->push($data);
 			}
 
-			return;
+			return $results;
 		}
 
 		// If the concurrency is higher than 1, we can run the batches concurrently using the number of forks specified.
@@ -66,8 +70,14 @@ trait SupportsConcurrency
 				}
 
 				// Process the result.
-				$process($result);
+				if ($process) {
+					$process($result);
+				}
+
+				$results->push($result);
 			}
 		}
+
+		return $results;
 	}
 }

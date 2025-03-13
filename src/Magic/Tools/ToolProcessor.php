@@ -41,7 +41,7 @@ class ToolProcessor
         $parameters = [];
 
         foreach ($reflection->getParameters() as $param) {
-            if (Str::contains($param->getType()->getName(), 'FunctionCall')) {
+            if (Str::contains($param->getType()->getName(), ['FunctionCall', 'ToolCall'])) {
                 continue;
             }
 

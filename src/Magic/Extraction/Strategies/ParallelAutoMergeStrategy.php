@@ -27,14 +27,9 @@ class ParallelAutoMergeStrategy extends Extractor
 			llm: $this->llm
 		);
 
-		$listOfData = [];
-
-		$this->runConcurrently(
+		$listOfData = $this->runConcurrently(
 			batches: $batches,
 			execute: fn(Collection $artifacts) => $this->generate($artifacts),
-			process: function (array $data) use (&$listOfData) {
-				$listOfData[] = $data;
-			}
 		);
 
 		/** @var SmartDataMerger $merger */

@@ -21,9 +21,7 @@ class ParallelStrategy extends Extractor
     {
 		$batches = $this->getBatches(artifacts: $artifacts);
 
-        $dataList = [];
-
-		$this->runConcurrently(
+		$dataList = $this->runConcurrently(
 			batches: $batches,
 			execute: fn(Collection $artifacts) => $this->generate($artifacts),
 			process: function ($data) use (&$dataList) {
@@ -35,7 +33,7 @@ class ParallelStrategy extends Extractor
 			}
 		);
 
-        $data = $this->mergeWithLlm($dataList);
+        $data = $this->mergeWithLlm($dataList->all());
 
         $this->logDataProgress(data: $data);
 
