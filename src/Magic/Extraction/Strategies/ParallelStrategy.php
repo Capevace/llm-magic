@@ -23,14 +23,7 @@ class ParallelStrategy extends Extractor
 
 		$dataList = $this->runConcurrently(
 			batches: $batches,
-			execute: fn(Collection $artifacts) => $this->generate($artifacts),
-			process: function ($data) use (&$dataList) {
-				if (is_string($data)) {
-					Log::critical("Data is a string!", ['data' => $data]);
-				} else {
-					$dataList[] = $data;
-				}
-			}
+			execute: fn(Collection $artifacts) => $this->generate($artifacts)
 		);
 
         $data = $this->mergeWithLlm($dataList->all());

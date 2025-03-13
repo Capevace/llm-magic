@@ -60,10 +60,10 @@ trait SupportsConcurrency
 				});
 			}
 
-			$results = Async::wait();
-			$results = json_decode(json_encode($results), associative: true, flags: JSON_THROW_ON_ERROR);
+			$returnedResults = Async::wait();
+			$returnedResults = json_decode(json_encode($returnedResults), associative: true, flags: JSON_THROW_ON_ERROR);
 
-			foreach ($results as $result) {
+			foreach ($returnedResults as $result) {
 				// Filter out invalid results.
 				if ($result === null) {
 					continue;
