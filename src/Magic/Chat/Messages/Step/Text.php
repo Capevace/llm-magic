@@ -1,6 +1,6 @@
 <?php
 
-namespace Mateffy\Magic\Chat\Messages\MultimodalMessage;
+namespace Mateffy\Magic\Chat\Messages\Step;
 
 use Mateffy\Magic\Chat\Messages\WireableViaArray;
 

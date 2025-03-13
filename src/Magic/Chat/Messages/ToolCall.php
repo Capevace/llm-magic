@@ -5,7 +5,7 @@ namespace Mateffy\Magic\Chat\Messages;
 use Illuminate\Contracts\Support\Arrayable;
 use Livewire\Wireable;
 
-class FunctionCall implements Arrayable, Wireable
+class ToolCall implements Arrayable, Wireable
 {
     use WireableViaArray;
 

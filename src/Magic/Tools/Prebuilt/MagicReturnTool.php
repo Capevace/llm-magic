@@ -4,7 +4,7 @@ namespace Mateffy\Magic\Tools\Prebuilt;
 
 
 use Mateffy\Magic;
-use Mateffy\Magic\Chat\Messages\FunctionCall;
+use Mateffy\Magic\Chat\Messages\ToolCall;
 use Mateffy\Magic\Tools\InvokableTool;
 
 class MagicReturnTool implements InvokableTool
@@ -57,7 +57,7 @@ class MagicReturnTool implements InvokableTool
         return $arguments;
     }
 
-    public function execute(FunctionCall $call): mixed
+    public function execute(ToolCall $call): mixed
     {
         return Magic::end(match ($this->type) {
             'number' => floatval($call->arguments['value']),

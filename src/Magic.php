@@ -212,6 +212,18 @@ class Magic
 			'parallel-auto-merge' => ParallelAutoMergeStrategy::class,
 			'double-pass' => DoublePassStrategy::class,
 			'double-pass-auto-merge' => DoublePassStrategyAutoMerging::class,
+			...self::$customExtractionStrategies,
 		]);
+	}
+
+	/**
+	 * Register a custom extraction strategy.
+	 *
+	 * @param string $key
+	 * @param class-string<Strategy> $strategy
+	 */
+	public static function registerStrategy(string $key, string $strategy): void
+	{
+		self::$customExtractionStrategies[$key] = $strategy;
 	}
 }

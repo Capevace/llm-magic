@@ -3,7 +3,7 @@
 namespace Mateffy\Magic\Chat\Prompt;
 
 use Illuminate\Support\Facades\Log;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage;
+use Mateffy\Magic\Chat\Messages\Step;
 use Mateffy\Magic\Chat\Prompt;
 use Mateffy\Magic\Chat\ToolChoice;
 use Mateffy\Magic\Extraction\Artifacts\Artifact;
@@ -120,8 +120,8 @@ class SequentialExtractorPrompt implements Prompt
 
         return [
             // Attach images to the prompt
-            new MultimodalMessage(role: Role::User, content: [
-				new MultimodalMessage\Text($this->prompt()),
+            new Step(role: Role::User, content: [
+				new Step\Text($this->prompt()),
                 ...$images,
             ]),
         ];

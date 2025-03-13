@@ -2,18 +2,18 @@
 
 namespace Mateffy\Magic\Chat\Messages;
 
-use Mateffy\Magic\Chat\Messages\MultimodalMessage\ContentInterface;
+use Mateffy\Magic\Chat\Messages\Step\ContentInterface;
 use Mateffy\Magic\Chat\Prompt\Role;
 
-class FunctionOutputMessage implements Message, DataMessage, ContentInterface
+class ToolResultMessage implements Message, DataMessage, ContentInterface
 {
     use WireableViaArray;
 
     public function __construct(
-        public Role $role,
-        public FunctionCall $call,
-        public mixed $output,
-        public bool $endConversation = false,
+        public Role     $role,
+        public ToolCall $call,
+        public mixed    $output,
+        public bool     $endConversation = false,
     ) {}
 
     public function data(): ?array
@@ -33,7 +33,7 @@ class FunctionOutputMessage implements Message, DataMessage, ContentInterface
     {
         return new self(
             role: Role::from($data['role']),
-            call: FunctionCall::fromArray($data['call']),
+            call: ToolCall::fromArray($data['call']),
             output: $data['output'] ?? null,
         );
     }
@@ -74,22 +74,22 @@ class FunctionOutputMessage implements Message, DataMessage, ContentInterface
         return $this->role;
     }
 
-    public static function output(FunctionCall $call, mixed $output): static
+    public static function output(ToolCall $call, mixed $output): static
     {
         return new self(role: Role::User, call: $call, output: $output);
     }
 
-    public static function end(FunctionCall $call, mixed $output): static
+    public static function end(ToolCall $call, mixed $output): static
     {
         return new self(role: Role::User, call: $call, output: $output, endConversation: true);
     }
 
-    public static function error(FunctionCall $call, string $message): static
+    public static function error(ToolCall $call, string $message): static
     {
         return new self(role: Role::User, call: $call, output: ['error' => $message]);
     }
 
-    public static function canceled(FunctionCall $call): static
+    public static function canceled(ToolCall $call): static
     {
         return new self(role: Role::User, call: $call, output: 'canceled');
     }

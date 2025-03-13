@@ -3,8 +3,8 @@
 namespace Mateffy\Magic\Models\Decoders;
 
 use Illuminate\Support\Arr;
-use Mateffy\Magic\Chat\Messages\FunctionCall;
-use Mateffy\Magic\Chat\Messages\FunctionInvocationMessage;
+use Mateffy\Magic\Chat\Messages\ToolCall;
+use Mateffy\Magic\Chat\Messages\ToolCallMessage;
 use Mateffy\Magic\Chat\Messages\JsonMessage;
 use Mateffy\Magic\Chat\Messages\PartialMessage;
 use Mateffy\Magic\Chat\Messages\TextMessage;
@@ -104,9 +104,9 @@ class ResponseDecoder implements Decoder
         }
 
         if ($function !== null) {
-            return new FunctionInvocationMessage(
+            return new ToolCallMessage(
                 role: $role,
-                call: FunctionCall::tryFrom($function),
+                call: ToolCall::tryFrom($function),
                 partial: $content,
             );
         }

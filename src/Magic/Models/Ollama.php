@@ -5,12 +5,12 @@ namespace Mateffy\Magic\Models;
 use Closure;
 use GuzzleHttp\Client;
 use Mateffy\Magic\Chat\MessageCollection;
-use Mateffy\Magic\Chat\Messages\FunctionInvocationMessage;
-use Mateffy\Magic\Chat\Messages\FunctionOutputMessage;
+use Mateffy\Magic\Chat\Messages\ToolCallMessage;
+use Mateffy\Magic\Chat\Messages\ToolResultMessage;
 use Mateffy\Magic\Chat\Messages\JsonMessage;
 use Mateffy\Magic\Chat\Messages\Message;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage\ContentInterface;
+use Mateffy\Magic\Chat\Messages\Step;
+use Mateffy\Magic\Chat\Messages\Step\ContentInterface;
 use Mateffy\Magic\Chat\Messages\TextMessage;
 use Mateffy\Magic\Chat\Prompt\Role;
 use Mateffy\Magic\Chat\Prompt;
@@ -85,7 +85,7 @@ class Ollama extends ElElEm
         //                    {"role": "assistant", "content": [
         //                        {"type": "tool_use", "id": "toolu_01A09q90qw90lq917835lq9", "name": "get_weather", "input": {"location": "San Francisco, CA"}}
         //                    ]},
-                            FunctionInvocationMessage::class => [
+                            ToolCallMessage::class => [
                                 'class' => 'function_invocation',
                                 'role' => $message->role,
                                 'content' => [
@@ -101,7 +101,7 @@ class Ollama extends ElElEm
         //                    {"role": "user", "content": [
         //                        {"type": "tool_result", "tool_use_id": "toolu_01A09q90qw90lq917835lq9", "content": "15 degrees"}
         //                    ]},
-                            FunctionOutputMessage::class => [
+                            ToolResultMessage::class => [
                                 'class' => 'function_output',
                                 'role' => $message->role,
                                 'content' => [
@@ -115,7 +115,7 @@ class Ollama extends ElElEm
                                 ],
                             ],
 
-                            MultimodalMessage::class => [
+                            Step::class => [
                                 'class' => 'multimodal',
                                 'role' => $message->role,
                                 'content' => collect($message->content)
@@ -165,7 +165,7 @@ class Ollama extends ElElEm
                     $content = $json['message']['content'];
 
                     if (!$message && ($content[0] ?? null) === '{') {
-                        $message = new FunctionInvocationMessage(
+                        $message = new ToolCallMessage(
                             role: Role::Assistant,
                             call: null,
                             partial: ''
@@ -177,7 +177,7 @@ class Ollama extends ElElEm
                         );
                     }
 
-                    if ($message instanceof FunctionInvocationMessage) {
+                    if ($message instanceof ToolCallMessage) {
                         $message = $message->appendFull($content);
                     } else if ($message instanceof TextMessage) {
                         $message = $message->append($content);

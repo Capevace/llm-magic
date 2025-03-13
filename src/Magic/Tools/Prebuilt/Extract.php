@@ -3,7 +3,7 @@
 namespace Mateffy\Magic\Tools\Prebuilt;
 
 use Mateffy\Magic;
-use Mateffy\Magic\Chat\Messages\FunctionCall;
+use Mateffy\Magic\Chat\Messages\ToolCall;
 use Mateffy\Magic\Tools\InvokableTool;
 use Opis\JsonSchema\{
     Validator,
@@ -40,7 +40,7 @@ class Extract implements InvokableTool
         return $arguments;
     }
 
-    public function execute(FunctionCall $call): mixed
+    public function execute(ToolCall $call): mixed
     {
         return Magic::end($call->arguments);
     }

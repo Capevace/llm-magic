@@ -3,7 +3,7 @@
 namespace Mateffy\Magic\Tools\Prebuilt;
 
 use Closure;
-use Mateffy\Magic\Chat\Messages\FunctionCall;
+use Mateffy\Magic\Chat\Messages\ToolCall;
 use Mateffy\Magic\Tools\InvokableTool;
 
 class Finish implements InvokableTool
@@ -39,7 +39,7 @@ class Finish implements InvokableTool
         return $validator->validated();
     }
 
-    public function execute(FunctionCall $call): mixed
+    public function execute(ToolCall $call): mixed
     {
         return null;
     }

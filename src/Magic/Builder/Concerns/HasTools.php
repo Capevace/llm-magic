@@ -3,7 +3,7 @@
 namespace Mateffy\Magic\Builder\Concerns;
 
 use Closure;
-use Mateffy\Magic\Chat\Messages\FunctionCall;
+use Mateffy\Magic\Chat\Messages\ToolCall;
 use Mateffy\Magic\Chat\ToolChoice;
 use Mateffy\Magic\Tools\InvokableTool;
 use Mateffy\Magic\Tools\ToolProcessor;
@@ -22,7 +22,7 @@ trait HasTools
     public ?Closure $onToolError = null;
 
     /**
-     * @var Closure(FunctionCall): void|null $shouldInterrupt
+     * @var Closure(ToolCall): void|null $shouldInterrupt
      */
     public ?Closure $shouldInterrupt = null;
 

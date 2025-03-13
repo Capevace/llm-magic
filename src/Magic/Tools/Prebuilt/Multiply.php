@@ -3,7 +3,7 @@
 namespace Mateffy\Magic\Tools\Prebuilt;
 
 use Closure;
-use Mateffy\Magic\Chat\Messages\FunctionCall;
+use Mateffy\Magic\Chat\Messages\ToolCall;
 use Mateffy\Magic\Tools\InvokableTool;
 
 class Multiply implements InvokableTool
@@ -51,7 +51,7 @@ class Multiply implements InvokableTool
         return $validator->validated();
     }
 
-    public function execute(FunctionCall $call): mixed
+    public function execute(ToolCall $call): mixed
     {
         return $this->callback()($call->arguments['a'], $call->arguments['b']);
     }

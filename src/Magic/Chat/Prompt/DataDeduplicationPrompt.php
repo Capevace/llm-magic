@@ -3,10 +3,10 @@
 namespace Mateffy\Magic\Chat\Prompt;
 
 use JsonException;
-use Mateffy\Magic\Chat\Messages\FunctionCall;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage\Text;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage\ToolUse;
+use Mateffy\Magic\Chat\Messages\ToolCall;
+use Mateffy\Magic\Chat\Messages\Step;
+use Mateffy\Magic\Chat\Messages\Step\Text;
+use Mateffy\Magic\Chat\Messages\Step\ToolUse;
 use Mateffy\Magic\Chat\Prompt;
 use Mateffy\Magic\Chat\ToolChoice;
 use Mateffy\Magic\Tools\Prebuilt\RemoveDuplicates;
@@ -52,13 +52,13 @@ class DataDeduplicationPrompt implements Prompt
 	 */
 	public function messages(): array
     {
-		$example_tool_call = new FunctionCall('removeDuplicates', [
+		$example_tool_call = new ToolCall('removeDuplicates', [
 			'keys' => ['products.3', 'products.5']
 		]);
 
         return [
 			// We provide the LLM a deduplication example to utilize few-shot prompting behavior
-			new MultimodalMessage(role: Role::User, content: [
+			new Step(role: Role::User, content: [
 				new Text($this->makePrompt(
 					schema: [
 						'type' => 'object',
@@ -90,16 +90,16 @@ class DataDeduplicationPrompt implements Prompt
 					]
 				)),
             ]),
-			new MultimodalMessage(
+			new Step(
 				role: Role::Assistant,
 				content: [
 					ToolUse::call($example_tool_call)
 				]
 			),
-			new MultimodalMessage(
+			new Step(
 				role: Role::User,
 				content: [
-					MultimodalMessage\ToolResult::output($example_tool_call, 'The duplicates have been removed. Resetting the environment and preparing new data...'),
+					Step\ToolResult::output($example_tool_call, 'The duplicates have been removed. Resetting the environment and preparing new data...'),
 					new Text($this->makePrompt(
 						schema: $this->schema,
 						data: $this->data

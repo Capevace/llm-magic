@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use JsonException;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage\Base64Image;
+use Mateffy\Magic\Chat\Messages\Step\Image;
 use Mateffy\Magic\Exceptions\ArtifactGenerationFailed;
 use Mateffy\Magic\Extraction\ContentType;
 use Mateffy\Magic\Extraction\ContextOptions;
@@ -475,15 +475,15 @@ class DiskArtifact implements Artifact
         return $this->metadata ?? $this->metadata = ArtifactMetadata::fromFile(id: $this->id, path: $this->path, disk: $this->disk);
     }
 
-    public function makeBase64Image(EmbedSlice $content): Base64Image
+    public function makeBase64Image(EmbedSlice $content): Image
     {
         $path = $content->isAbsolutePath()
             ? $content->getPath()
             : "{$this->artifactDir}/{$content->getPath()}";
 
         return $this->disk
-            ? Base64Image::fromDisk($this->artifactDirDisk, $path)
-            : Base64Image::fromPath($path);
+            ? Image::fromDisk($this->artifactDirDisk, $path)
+            : Image::fromPath($path);
     }
 
     public function getRawEmbedContents(EmbedSlice $content): mixed

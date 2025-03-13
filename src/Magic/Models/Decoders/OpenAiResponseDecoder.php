@@ -2,8 +2,8 @@
 
 namespace Mateffy\Magic\Models\Decoders;
 
-use Mateffy\Magic\Chat\Messages\FunctionCall;
-use Mateffy\Magic\Chat\Messages\FunctionInvocationMessage;
+use Mateffy\Magic\Chat\Messages\ToolCall;
+use Mateffy\Magic\Chat\Messages\ToolCallMessage;
 use Mateffy\Magic\Chat\Messages\Message;
 use Mateffy\Magic\Chat\Messages\PartialMessage;
 use Mateffy\Magic\Chat\Messages\TextMessage;
@@ -103,9 +103,9 @@ class OpenAiResponseDecoder implements Decoder
                     $toolCall = $delta->toolCalls[0] ?? null;
 
                     $message = $toolCall !== null
-                        ? new FunctionInvocationMessage(
+                        ? new ToolCallMessage(
                             role: Role::Assistant,
-                            call: new FunctionCall(
+                            call: new ToolCall(
                                 name: $toolCall->function->name,
                                 arguments: PartialJson::parse($toolCall->function->arguments) ?? [],
                                 id: $toolCall->id,
@@ -119,7 +119,7 @@ class OpenAiResponseDecoder implements Decoder
                     if ($this->onMessageProgress) {
                         ($this->onMessageProgress)($message);
                     }
-                } else if ($message instanceof FunctionInvocationMessage && $toolCall = $delta->toolCalls[0] ?? null) {
+                } else if ($message instanceof ToolCallMessage && $toolCall = $delta->toolCalls[0] ?? null) {
                     $message->append($toolCall->function->arguments);
 
                     if ($this->onMessageProgress) {
@@ -130,9 +130,9 @@ class OpenAiResponseDecoder implements Decoder
 
 					$toolCall = $delta->toolCalls[0];
 
-					$message = new FunctionInvocationMessage(
+					$message = new ToolCallMessage(
 						role: Role::Assistant,
-						call: new FunctionCall(
+						call: new ToolCall(
 							name: $toolCall->function->name,
 							arguments: PartialJson::parse($toolCall->function->arguments) ?? [],
 							id: $toolCall->id,

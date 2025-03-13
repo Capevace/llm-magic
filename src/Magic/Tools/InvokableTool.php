@@ -2,7 +2,7 @@
 
 namespace Mateffy\Magic\Tools;
 
-use Mateffy\Magic\Chat\Messages\FunctionCall;
+use Mateffy\Magic\Chat\Messages\ToolCall;
 
 interface InvokableTool
 {
@@ -12,5 +12,5 @@ interface InvokableTool
 
     public function validate(array $arguments): array;
 
-    public function execute(FunctionCall $call): mixed;
+    public function execute(ToolCall $call): mixed;
 }

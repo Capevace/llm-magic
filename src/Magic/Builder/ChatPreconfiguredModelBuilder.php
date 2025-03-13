@@ -14,9 +14,9 @@ use Mateffy\Magic\Builder\Concerns\HasSystemPrompt;
 use Mateffy\Magic\Builder\Concerns\HasTokenCallback;
 use Mateffy\Magic\Builder\Concerns\HasTools;
 use Mateffy\Magic\Chat\MessageCollection;
-use Mateffy\Magic\Chat\Messages\FunctionInvocationMessage;
-use Mateffy\Magic\Chat\Messages\FunctionOutputMessage;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage;
+use Mateffy\Magic\Chat\Messages\ToolCallMessage;
+use Mateffy\Magic\Chat\Messages\ToolResultMessage;
+use Mateffy\Magic\Chat\Messages\Step;
 use Mateffy\Magic\Chat\Messages\TextMessage;
 use Mateffy\Magic\Chat\Signals\EndConversation;
 use Mateffy\Magic\Chat\ToolChoice;
@@ -56,32 +56,32 @@ class ChatPreconfiguredModelBuilder
                 $role = null;
 
                 foreach ($this->builder->messages as $message) {
-                    if ($message instanceof MultimodalMessage && count($current) > 0) {
-                        $messages->push(new MultimodalMessage(role: $role, content: $current));
+                    if ($message instanceof Step && count($current) > 0) {
+                        $messages->push(new Step(role: $role, content: $current));
                         $current = [];
 
                         $messages->push($message);
 
                         continue;
-                    } else if ($message instanceof MultimodalMessage) {
+                    } else if ($message instanceof Step) {
                         $messages->push($message);
 
                         continue;
                     } else if ($role && $message->role !== $role) {
-                        $messages->push(new MultimodalMessage(role: $role, content: $current));
+                        $messages->push(new Step(role: $role, content: $current));
                         $current = [];
                     }
 
                     $role = $message->role;
                     $current[] = match($message::class) {
-                        TextMessage::class => MultimodalMessage\Text::make($message->content),
-                        FunctionInvocationMessage::class => \Mateffy\Magic\Chat\Messages\MultimodalMessage\ToolUse::call($message->call),
-                        FunctionOutputMessage::class => MultimodalMessage\ToolResult::output($message->call, $message->output),
+                        TextMessage::class => Step\Text::make($message->content),
+                        ToolCallMessage::class => \Mateffy\Magic\Chat\Messages\Step\ToolUse::call($message->call),
+                        ToolResultMessage::class => Step\ToolResult::output($message->call, $message->output),
                     };
                 }
 
                 if (count($current) > 0) {
-                    $messages->push(new MultimodalMessage(role: $role, content: $current));
+                    $messages->push(new Step(role: $role, content: $current));
                 }
 
                 return $messages->all();
@@ -189,7 +189,7 @@ class ChatPreconfiguredModelBuilder
         foreach ($messages as $message) {
             $this->addMessage($message);
 
-            if ($message instanceof FunctionInvocationMessage) {
+            if ($message instanceof ToolCallMessage) {
                 if ($fn = $this->tools[$message->call->name] ?? null) {
                     /** @var InvokableTool $fn */
 
@@ -202,14 +202,14 @@ class ChatPreconfiguredModelBuilder
 
                         $output = $fn->execute($message->call);
 
-                        if ($output instanceof FunctionOutputMessage) {
+                        if ($output instanceof ToolResultMessage) {
                             $outputMessage = $output;
                         } else if ($output instanceof EndConversation) {
-                            $outputMessage = FunctionOutputMessage::end(call: $message->call, output: $output->getOutput());
-                        } else if ($output instanceof MultimodalMessage) {
+                            $outputMessage = ToolResultMessage::end(call: $message->call, output: $output->getOutput());
+                        } else if ($output instanceof Step) {
                             $outputMessage = $output;
                         } else {
-                            $outputMessage = FunctionOutputMessage::output(call: $message->call, output: $output);
+                            $outputMessage = ToolResultMessage::output(call: $message->call, output: $output);
                         }
 
 						// If we make it to this point, we consider whatever went on successful so we can reset the attempt counter
@@ -218,7 +218,7 @@ class ChatPreconfiguredModelBuilder
 						// We use one attempt
 						$this->useAttempt();
 
-						$outputMessage = FunctionOutputMessage::error(call: $message->call, message: $e->getValidationErrorsAsJson());
+						$outputMessage = ToolResultMessage::error(call: $message->call, message: $e->getValidationErrorsAsJson());
 
                         if ($this->onToolError) {
                             ($this->onToolError)($e);
@@ -227,7 +227,7 @@ class ChatPreconfiguredModelBuilder
 						// We use one attempt
 						$this->useAttempt();
 
-                        $outputMessage = FunctionOutputMessage::error(call: $message->call, message: $e->getMessage());
+                        $outputMessage = ToolResultMessage::error(call: $message->call, message: $e->getMessage());
 
                         if ($this->onToolError) {
                             ($this->onToolError)($e);
@@ -253,7 +253,7 @@ class ChatPreconfiguredModelBuilder
             }
         }
 
-		$lastMessageWasFunctionOutput = $messages->last() instanceof FunctionOutputMessage;
+		$lastMessageWasFunctionOutput = $messages->last() instanceof ToolResultMessage;
 		$lastMessageWasEndConversation = $lastMessageWasFunctionOutput && $messages->last()->endConversation;
 		$hasRunOutOfAttempts = $this->attemptsLeft <= 0;
 

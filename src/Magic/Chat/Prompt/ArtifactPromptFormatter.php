@@ -4,7 +4,7 @@ namespace Mateffy\Magic\Chat\Prompt;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Blade;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage\Base64Image;
+use Mateffy\Magic\Chat\Messages\Step\Image;
 use Mateffy\Magic\Extraction\Artifacts\Artifact;
 use Mateffy\Magic\Extraction\ContextOptions;
 use Mateffy\Magic\Extraction\Slices\EmbedSlice;
@@ -39,7 +39,7 @@ class ArtifactPromptFormatter
 
 	/**
 	 * Format the embedded slices of the artifacts as Base64 images
-	 * @return Collection<Base64Image>
+	 * @return Collection<Image>
 	 */
 	public static function formatImagesAsBase64(Collection|array $artifacts, ContextOptions $contextOptions): Collection
 	{
@@ -110,7 +110,7 @@ class ArtifactPromptFormatter
 	/**
 	 * Convert the embedded slices of the artifacts to Base64 images
 	 *
-	 * @return Collection<Base64Image>
+	 * @return Collection<Image>
 	 */
 	public function convertEmbedsToBase64(): Collection
 	{

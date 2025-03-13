@@ -6,15 +6,15 @@ use Illuminate\Support\Str;
 use Mateffy\Magic\Chat\Prompt\Role;
 use Mateffy\Magic\Support\PartialJson;
 
-class FunctionInvocationMessage implements DataMessage, PartialMessage
+class ToolCallMessage implements DataMessage, PartialMessage
 {
     use WireableViaArray;
 
     public function __construct(
-        public Role $role,
-        public ?FunctionCall $call = null,
-        public ?string $partial = null,
-        public ?array $schema = null,
+        public Role      $role,
+        public ?ToolCall $call = null,
+        public ?string   $partial = null,
+        public ?array    $schema = null,
     ) {}
 
     public function toArray(): array
@@ -31,7 +31,7 @@ class FunctionInvocationMessage implements DataMessage, PartialMessage
     {
         return new static(
             role: Role::from($data['role']),
-            call: FunctionCall::fromArray($data['call']),
+            call: ToolCall::fromArray($data['call']),
             partial: $data['partial'] ?? null,
             schema: $data['schema'] ?? null,
         );
@@ -61,7 +61,7 @@ class FunctionInvocationMessage implements DataMessage, PartialMessage
         $this->partial .= $chunk;
 
         $data = PartialJson::parse($this->partial);
-        $this->call = new FunctionCall(
+        $this->call = new ToolCall(
             name: $this->call->name,
             arguments: $data ?? $this->call->arguments,
             id: $this->call->id,
@@ -76,7 +76,7 @@ class FunctionInvocationMessage implements DataMessage, PartialMessage
 
         $data = PartialJson::parse($this->partial);
         $this->call = ($data['name'] ?? $this->call?->name)
-            ? new FunctionCall(
+            ? new ToolCall(
                 name: $data['name'] ?? $this->call?->name,
                 arguments: $data['parameters'] ?? $this->call?->arguments ?? [],
                 id: $this->call?->id ?? Str::uuid()->toString(),
@@ -90,7 +90,7 @@ class FunctionInvocationMessage implements DataMessage, PartialMessage
     {
         $data = PartialJson::parse($chunk);
 
-        if ($call = FunctionCall::tryFrom($data)) {
+        if ($call = ToolCall::tryFrom($data)) {
             return new self(
                 role: Role::Assistant,
                 call: $call,
@@ -105,7 +105,7 @@ class FunctionInvocationMessage implements DataMessage, PartialMessage
         );
     }
 
-    public static function call(FunctionCall $call): static
+    public static function call(ToolCall $call): static
     {
         return new self(
             role: Role::Assistant,

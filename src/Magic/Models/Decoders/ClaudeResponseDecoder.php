@@ -5,8 +5,8 @@ namespace Mateffy\Magic\Models\Decoders;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Mateffy\Magic\Chat\Messages\FunctionCall;
-use Mateffy\Magic\Chat\Messages\FunctionInvocationMessage;
+use Mateffy\Magic\Chat\Messages\ToolCall;
+use Mateffy\Magic\Chat\Messages\ToolCallMessage;
 use Mateffy\Magic\Chat\Messages\JsonMessage;
 use Mateffy\Magic\Chat\Messages\Message;
 use Mateffy\Magic\Chat\Messages\PartialMessage;
@@ -139,7 +139,7 @@ class ClaudeResponseDecoder implements Decoder
                             }
                         }
 
-                        if ($message instanceof FunctionInvocationMessage && $message->data() !== null && count($message->data()) > 0) {
+                        if ($message instanceof ToolCallMessage && $message->data() !== null && count($message->data()) > 0) {
                             $this->messages[] = $message;
 
                             if ($this->onMessage) {
@@ -147,10 +147,10 @@ class ClaudeResponseDecoder implements Decoder
                             }
                         }
 
-                        $message = new FunctionInvocationMessage(
+                        $message = new ToolCallMessage(
                             role: Role::Assistant,
                             call: ($name = $data['content_block']['name'])
-                                ? new FunctionCall(
+                                ? new ToolCall(
                                     name: $name,
                                     arguments: $data['content_block']['input'] ?? [],
                                     id: $data['content_block']['id'] ?? null,

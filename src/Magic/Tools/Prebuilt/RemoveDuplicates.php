@@ -3,7 +3,7 @@
 namespace Mateffy\Magic\Tools\Prebuilt;
 
 use Mateffy\Magic;
-use Mateffy\Magic\Chat\Messages\FunctionCall;
+use Mateffy\Magic\Chat\Messages\ToolCall;
 use Mateffy\Magic\Tools\InvokableTool;
 
 class RemoveDuplicates implements InvokableTool
@@ -41,7 +41,7 @@ class RemoveDuplicates implements InvokableTool
         return $arguments;
     }
 
-    public function execute(FunctionCall $call): mixed
+    public function execute(ToolCall $call): mixed
     {
 		// We don't directly do anything but instead return the data to whatever script is using this tool to deduplicate the data.
         return Magic::end($call->arguments);

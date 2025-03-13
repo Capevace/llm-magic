@@ -11,16 +11,16 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Mateffy\Magic\Chat\MessageCollection;
-use Mateffy\Magic\Chat\Messages\FunctionInvocationMessage;
-use Mateffy\Magic\Chat\Messages\FunctionOutputMessage;
+use Mateffy\Magic\Chat\Messages\ToolCallMessage;
+use Mateffy\Magic\Chat\Messages\ToolResultMessage;
 use Mateffy\Magic\Chat\Messages\JsonMessage;
 use Mateffy\Magic\Chat\Messages\Message;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage\Base64Image;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage\ContentInterface;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage\Text;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage\ToolResult;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage\ToolUse;
+use Mateffy\Magic\Chat\Messages\Step;
+use Mateffy\Magic\Chat\Messages\Step\Image;
+use Mateffy\Magic\Chat\Messages\Step\ContentInterface;
+use Mateffy\Magic\Chat\Messages\Step\Text;
+use Mateffy\Magic\Chat\Messages\Step\ToolResult;
+use Mateffy\Magic\Chat\Messages\Step\ToolUse;
 use Mateffy\Magic\Chat\Messages\TextMessage;
 use Mateffy\Magic\Chat\Prompt;
 use Mateffy\Magic\Chat\TokenStats;
@@ -62,7 +62,7 @@ trait UsesAnthropicApi
 					'role' => $message->role, 'content' => json_encode($message->data),
 				],
 
-				FunctionInvocationMessage::class => [
+				ToolCallMessage::class => [
 					'role' => $message->role, 'content' => [
 						[
 							'type' => 'tool_use', 'id' => $message->call->id ?? $message->call->name, 'name' => $message->call->name, 'input' => $message->call->arguments,
@@ -70,7 +70,7 @@ trait UsesAnthropicApi
 					],
 				],
 
-				FunctionOutputMessage::class => [
+				ToolResultMessage::class => [
 					'role' => $message->role, 'content' => [
 						[
 							'type' => 'tool_result', 'tool_use_id' => $message->call->id ?? $message->call->name, 'content' => [
@@ -80,13 +80,13 @@ trait UsesAnthropicApi
 					],
 				],
 
-				MultimodalMessage::class => [
+				Step::class => [
 					'role' => $message->role, 'content' => collect($message->content)
 						->map(fn(ContentInterface $message) => match ($message::class) {
 							Text::class => [
 								'type' => 'text', 'text' => $message->text,
 							],
-							Base64Image::class => [
+							Image::class => [
 								'type' => 'image', 'source' => [
 									'type' => 'base64', 'media_type' => $message->mime, 'data' => $message->imageBase64,
 								]

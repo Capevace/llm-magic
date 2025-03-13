@@ -6,16 +6,16 @@ use Closure;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Mateffy\Magic\Chat\MessageCollection;
-use Mateffy\Magic\Chat\Messages\FunctionInvocationMessage;
-use Mateffy\Magic\Chat\Messages\FunctionOutputMessage;
+use Mateffy\Magic\Chat\Messages\ToolCallMessage;
+use Mateffy\Magic\Chat\Messages\ToolResultMessage;
 use Mateffy\Magic\Chat\Messages\JsonMessage;
 use Mateffy\Magic\Chat\Messages\Message;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage\Base64Image;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage\ContentInterface;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage\Text;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage\ToolResult;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage\ToolUse;
+use Mateffy\Magic\Chat\Messages\Step;
+use Mateffy\Magic\Chat\Messages\Step\Image;
+use Mateffy\Magic\Chat\Messages\Step\ContentInterface;
+use Mateffy\Magic\Chat\Messages\Step\Text;
+use Mateffy\Magic\Chat\Messages\Step\ToolResult;
+use Mateffy\Magic\Chat\Messages\Step\ToolUse;
 use Mateffy\Magic\Chat\Messages\TextMessage;
 use Mateffy\Magic\Chat\Prompt;
 use Mateffy\Magic\Chat\TokenStats;
@@ -81,7 +81,7 @@ trait UsesOpenAiApi
                         'content' => json_encode($message->data),
                     ],
                 ],
-                FunctionInvocationMessage::class => [
+                ToolCallMessage::class => [
                     [
                         'role' => $message->role,
                         'tool_calls' => [
@@ -98,14 +98,14 @@ trait UsesOpenAiApi
                         'tool_call_id' => $message->call->id,
                     ],
                 ],
-                FunctionOutputMessage::class => [
+                ToolResultMessage::class => [
                     [
                         'role' => 'tool',
                         'content' => $message->text(),
                         'tool_call_id' => $message->call->id,
                     ],
                 ],
-                MultimodalMessage::class => (function () use ($message) {
+                Step::class => (function () use ($message) {
                     $tools = collect($message->content)
                         ->filter(fn (ContentInterface $message) => $message instanceof ToolUse || $message instanceof ToolResult)
                         ->map(fn (ContentInterface $message) => match ($message::class) {
@@ -147,7 +147,7 @@ trait UsesOpenAiApi
                                             'type' => 'text',
                                             'text' => $message->text,
                                         ],
-                                        Base64Image::class => [
+                                        Image::class => [
                                             'type' => 'image_url',
                                             'image_url' => [
                                                 'url' => "data:{$message->mime};base64,{$message->imageBase64}"

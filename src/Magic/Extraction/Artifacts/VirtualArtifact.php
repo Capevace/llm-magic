@@ -4,7 +4,7 @@ namespace Mateffy\Magic\Extraction\Artifacts;
 
 use Illuminate\Support\Collection;
 use JsonException;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage\Base64Image;
+use Mateffy\Magic\Chat\Messages\Step\Image;
 use Mateffy\Magic\Extraction\ContextOptions;
 use Mateffy\Magic\Extraction\Slices\EmbedSlice;
 
@@ -49,7 +49,7 @@ class VirtualArtifact implements Artifact
         return $this->metadata;
     }
 
-    public function makeBase64Image(EmbedSlice $content): Base64Image
+    public function makeBase64Image(EmbedSlice $content): Image
     {
 		throw new \Exception('Not implemented');
     }

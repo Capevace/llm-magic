@@ -1,8 +1,8 @@
 <?php
 
-namespace Mateffy\Magic\Chat\Messages\MultimodalMessage;
+namespace Mateffy\Magic\Chat\Messages\Step;
 
-use Mateffy\Magic\Chat\Messages\FunctionCall;
+use Mateffy\Magic\Chat\Messages\ToolCall;
 use Mateffy\Magic\Chat\Messages\WireableViaArray;
 
 readonly class ToolResult implements ContentInterface
@@ -10,8 +10,8 @@ readonly class ToolResult implements ContentInterface
     use WireableViaArray;
 
     public function __construct(
-        public FunctionCall $call,
-        public mixed $output = null,
+        public ToolCall $call,
+        public mixed    $output = null,
     ) {}
 
     public function toArray(): array
@@ -26,12 +26,12 @@ readonly class ToolResult implements ContentInterface
     public static function fromArray(array $data): self
     {
         return new self(
-            call: FunctionCall::fromArray($data['call']),
+            call: ToolCall::fromArray($data['call']),
             output: $data['output'] ?? null,
         );
     }
 
-    public static function output(FunctionCall $call, mixed $output): self
+    public static function output(ToolCall $call, mixed $output): self
     {
         return new self(call: $call, output: $output);
     }

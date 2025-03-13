@@ -2,12 +2,12 @@
 
 namespace Mateffy\Magic\Chat\Messages;
 
-use Mateffy\Magic\Chat\Messages\MultimodalMessage\Base64Image;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage\ContentInterface;
-use Mateffy\Magic\Chat\Messages\MultimodalMessage\Text;
+use Mateffy\Magic\Chat\Messages\Step\Image;
+use Mateffy\Magic\Chat\Messages\Step\ContentInterface;
+use Mateffy\Magic\Chat\Messages\Step\Text;
 use Mateffy\Magic\Chat\Prompt\Role;
 
-class MultimodalMessage implements Message
+class Step implements Message
 {
     use WireableViaArray;
 
@@ -32,7 +32,7 @@ class MultimodalMessage implements Message
             content: collect($data['content'])
                 ->map(fn (array $item) => match ($item['type'] ?? null) {
                     'text' => Text::fromArray($item),
-                    'image' => Base64Image::fromArray($item),
+                    'image' => Image::fromArray($item),
                     default => null,
                 })
                 ->filter()
@@ -52,16 +52,34 @@ class MultimodalMessage implements Message
     /**
      * @param array<ContentInterface> $content
      */
-    public static function user(array $content): static
+    public static function user(array|string $content): static
     {
+		if (is_string($content)) {
+			return new self(
+				role: Role::User,
+				content: [
+					new Text($content),
+				],
+			);
+		}
+
         return new self(
             role: Role::User,
             content: $content,
         );
     }
 
-    public static function assistant(array $content): static
+    public static function assistant(array|string $content): static
     {
+		if (is_string($content)) {
+			return new self(
+				role: Role::Assistant,
+				content: [
+					new Text($content),
+				],
+			);
+		}
+
         return new self(
             role: Role::Assistant,
             content: $content,
@@ -76,7 +94,23 @@ class MultimodalMessage implements Message
         return new self(
             role: Role::User,
             content: [
-                new Base64Image(
+                new Image(
+                    imageBase64: $base64Image,
+                    mime: $mime,
+                ),
+            ],
+        );
+    }
+
+	/**
+     * @param array<ContentInterface> $content
+     */
+    public static function base64(string $base64Image, string $mime): static
+    {
+        return new self(
+            role: Role::User,
+            content: [
+                new Image(
                     imageBase64: $base64Image,
                     mime: $mime,
                 ),

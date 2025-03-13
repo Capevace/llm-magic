@@ -4,7 +4,7 @@ namespace Mateffy\Magic\Tools;
 
 use Closure;
 use Illuminate\Container\Container;
-use Mateffy\Magic\Chat\Messages\FunctionCall;
+use Mateffy\Magic\Chat\Messages\ToolCall;
 
 class
 MagicTool implements InvokableTool
@@ -34,7 +34,7 @@ MagicTool implements InvokableTool
         return $arguments;
     }
 
-    public function execute(FunctionCall $call): mixed
+    public function execute(ToolCall $call): mixed
     {
         return Container::getInstance()->call($this->callback, [
             ...$call->arguments,
