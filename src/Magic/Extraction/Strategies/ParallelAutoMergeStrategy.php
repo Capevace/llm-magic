@@ -66,10 +66,6 @@ class ParallelAutoMergeStrategy extends Extractor
 		$lessObviousDuplicateKeys = $this->findLessObviousDuplicatesWithLlm($dataDeduplicated);
 		$dataDeduplicatedByLlm = $merger->deduplicate(data: $dataDeduplicated, keys: $lessObviousDuplicateKeys);
 
-		dump($listOfData, $mergedData);
-		dump($dataDeduplicated, $exactDuplicateKeys);
-		dump($dataDeduplicatedByLlm, $lessObviousDuplicateKeys);
-
 		return $dataDeduplicatedByLlm;
     }
 
