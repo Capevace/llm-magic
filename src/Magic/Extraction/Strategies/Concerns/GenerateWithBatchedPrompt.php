@@ -3,6 +3,7 @@
 namespace Mateffy\Magic\Extraction\Strategies\Concerns;
 
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Mateffy\Magic\Chat\Prompt\SequentialExtractorPrompt;
 
 trait GenerateWithBatchedPrompt
@@ -18,11 +19,21 @@ trait GenerateWithBatchedPrompt
 
 		$threadId = $this->createActorThread(llm: $this->llm, prompt: $prompt);
 
-        return $this->send(
+        $data = $this->send(
 			threadId: $threadId,
 			llm: $this->llm,
 			prompt: $prompt,
 			logDataProgress: false
 		);
+
+		if ($data === null) {
+			Log::warning('No data received from LLM for batch.', [
+				'threadId' => $threadId,
+				'context' => $this->contextOptions->getEvaluationTypeLabel(),
+				'llm' => $this->llm->getModelName(),
+			]);
+		}
+
+		return $data;
     }
 }

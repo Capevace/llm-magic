@@ -56,12 +56,16 @@ class ParallelAutoMergeStrategy extends Extractor
 		}
 
 		// Run an initial de-duplication based on hashing. Finds only exact 1:1 duplicates.
-		$exactDuplicateKeys = $merger->findExactDuplicatesWithHashing($mergedData);
-		$dataDeduplicated = $merger->deduplicate(data: $mergedData, keys: $exactDuplicateKeys);
+		$exactDuplicateKeys = $merger->findExactDuplicatesWithHashing($mergedData ?? []);
+		$dataDeduplicated = $merger->deduplicate(data: $mergedData ?? [], keys: $exactDuplicateKeys);
 
 		// Run a second de-duplication that finds less obvious duplicates using an LLM
 		$lessObviousDuplicateKeys = $this->findLessObviousDuplicatesWithLlm($dataDeduplicated);
 		$dataDeduplicatedByLlm = $merger->deduplicate(data: $dataDeduplicated, keys: $lessObviousDuplicateKeys);
+
+		dump($listOfData, $mergedData);
+		dump($dataDeduplicated, $exactDuplicateKeys);
+		dump($dataDeduplicatedByLlm, $lessObviousDuplicateKeys);
 
 		return $dataDeduplicatedByLlm;
     }

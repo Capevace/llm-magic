@@ -4,8 +4,9 @@ namespace Mateffy\Magic\Extraction\Strategies\Concerns;
 
 use Closure;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Concurrency;
+use Illuminate\Support\Facades\Log;
 use Mateffy\Magic\Extraction\Artifacts\Artifact;
+use VXM\Async\AsyncFacade as Async;
 
 trait SupportsConcurrency
 {
@@ -44,16 +45,19 @@ trait SupportsConcurrency
 		// We again chunk the batches into groups of $concurrency.
 		$concurrentSteps = $batches->chunk($concurrency);
 
+		// Run the concurrent steps. We split the batches into groups of $concurrency and run them concurrently to not cause any memory issues.
 		foreach ($concurrentSteps as $concurrentBatches) {
-			// Run the concurrent steps.
-			$results = Concurrency::driver('fork')
-				->run(
-					$concurrentBatches
-						// While these nested functions look a bit odd, they are necessary as
-						// Concurrency::driver('fork')->run() expects a Closure that it can serialize
-						->map(fn(Collection $artifacts) => fn() => $execute($artifacts))
-						->all()
-				);
+			foreach ($concurrentBatches as $batch) {
+				Async::run(function () use ($batch, $execute) {
+					$result = $execute($batch);
+//					Log::critical('result', ['result' => $result]);
+
+					return $result;
+				});
+			}
+
+			$results = Async::wait();
+			$results = json_decode(json_encode($results), associative: true, flags: JSON_THROW_ON_ERROR);
 
 			foreach ($results as $result) {
 				// Filter out invalid results.

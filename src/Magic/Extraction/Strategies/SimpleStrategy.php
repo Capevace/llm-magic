@@ -16,7 +16,7 @@ class SimpleStrategy extends Extractor
 		// We still batch the artifacts to avoid hitting the token limit, but only use the first one.
 		[$limitedArtifacts] = $this->getBatches(artifacts: $artifacts);
 
-        $prompt = new ExtractorPrompt(extractor: $this, artifacts: $limitedArtifacts, contextOptions: $this->contextOptions);
+        $prompt = new ExtractorPrompt(extractor: $this, artifacts: $limitedArtifacts->all(), contextOptions: $this->contextOptions);
 
         $threadId = $this->createActorThread(llm: $this->llm, prompt: $prompt);
 

@@ -1,0 +1,7 @@
+pdf.py
+pyproject.toml
+magic_import_python.egg-info/PKG-INFO
+magic_import_python.egg-info/SOURCES.txt
+magic_import_python.egg-info/dependency_links.txt
+magic_import_python.egg-info/requires.txt
+magic_import_python.egg-info/top_level.txt

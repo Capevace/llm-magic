@@ -14,6 +14,7 @@ use Mateffy\Magic\Exceptions\ToolCallException;
 use Mateffy\Magic\Exceptions\UnableToActAsFunction;
 use Mateffy\Magic\Exceptions\UnknownInferenceException;
 use Mateffy\Magic\Extraction\Strategies\DoublePassStrategy;
+use Mateffy\Magic\Extraction\Strategies\DoublePassStrategyAutoMerging;
 use Mateffy\Magic\Extraction\Strategies\ParallelAutoMergeStrategy;
 use Mateffy\Magic\Extraction\Strategies\ParallelStrategy;
 use Mateffy\Magic\Extraction\Strategies\SequentialAutoMergeStrategy;
@@ -34,6 +35,8 @@ use Throwable;
 
 class Magic
 {
+	protected static array $customExtractionStrategies = [];
+
     public static function extract(): ExtractionLLMBuilder
     {
         return new ExtractionLLMBuilder;
@@ -144,11 +147,6 @@ class Magic
         }
     }
 
-    public static function memory(): MagicMemory
-    {
-        return new MagicMemory;
-    }
-
     public static function embeddings(Closure|string|null $input = null, ?OpenAIEmbeddings $model = null): EmbeddingsBuilder
     {
         $builder = new EmbeddingsBuilder;
@@ -213,6 +211,7 @@ class Magic
 			'parallel' => ParallelStrategy::class,
 			'parallel-auto-merge' => ParallelAutoMergeStrategy::class,
 			'double-pass' => DoublePassStrategy::class,
+			'double-pass-auto-merge' => DoublePassStrategyAutoMerging::class,
 		]);
 	}
 }

@@ -146,7 +146,7 @@ class SmartDataMerger
 				...$keys,
 				...$duplicates
 					// Turn the indices into dot-notated keys
-					->map(fn (int $index) => "{$key}.{$index}")
+					->map(fn ($index) => "{$key}.{$index}")
 			];
 		}
 

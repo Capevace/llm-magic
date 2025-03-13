@@ -1,7 +1,7 @@
 @props([
     'color' => 'gray',
     'label' => 'Daten',
-    'name',
+    'name' => '',
     'statePath',
     'rootStatePath',
     'validationRootStatePath',

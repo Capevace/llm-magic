@@ -33,7 +33,7 @@ class DoublePassStrategy extends Extractor
         return $secondPassData;
     }
 
-	protected function makeParallelStrategy(): ParallelStrategy
+	protected function makeParallelStrategy(): Strategy
 	{
 		return ParallelStrategy::make(
 			llm: $this->llm,
@@ -49,7 +49,7 @@ class DoublePassStrategy extends Extractor
 		);
 	}
 
-	protected function makeSequentialStrategy(array $initialData = []): SequentialStrategy
+	protected function makeSequentialStrategy(array $initialData = []): Strategy
 	{
 		return SequentialStrategy::make(
 			llm: $this->llm,
