@@ -56,6 +56,9 @@ return [
 		'gemini' => [
 			'token' => env('GEMINI_API_KEY'),
 		],
+		'google' => [
+			'token' => env('GEMINI_API_KEY'),
+		],
 		'deepseek' => [
 			'token' => env('DEEPSEEK_API_KEY'),
 		]

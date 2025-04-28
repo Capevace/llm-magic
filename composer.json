@@ -21,13 +21,11 @@
         "blaspsoft/doxswap": "0.1.0-beta",
         "google-gemini-php/client": "^1.0",
         "greghunt/partial-json": "^1.1",
-        "illuminate/collections": "^8.0||^9.0||^10.0||^11.0",
-        "illuminate/contracts": "^10.0||^11.0",
+        "laravel/framework": "*",
         "livewire/livewire": "^3.5",
         "nlp-tools/nlp-tools": "^0.1.3",
         "nyholm/psr7": "^1.8",
-        "openai-php/client": "^0.10.3",
-        "openai-php/laravel": "^0.11.0",
+        "openai-php/client": "dev-main#205be4abd2c2c3856829a1a679f9140dce1fbf83",
         "opis/json-schema": "^2.4",
         "phpoffice/phpspreadsheet": "*",
         "phpoffice/phpword": "^1.3",
@@ -36,8 +34,7 @@
         "spatie/laravel-package-tools": "^1.16",
         "spatie/pdf-to-image": "^3.1",
         "swaggest/json-schema": "^0.12.42",
-        "symfony/http-client": "^7.0",
-        "vxm/laravel-async": "^5.0"
+        "symfony/http-client": "^7.0"
     },
     "extra": {
         "laravel": {

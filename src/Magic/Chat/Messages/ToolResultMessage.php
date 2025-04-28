@@ -74,6 +74,11 @@ class ToolResultMessage implements Message, DataMessage, ContentInterface
         return $this->role;
     }
 
+	public function withOutput(mixed $output): static
+	{
+		return new self(role: $this->role, call: $this->call, output: $output, endConversation: $this->endConversation);
+	}
+
     public static function output(ToolCall $call, mixed $output): static
     {
         return new self(role: Role::User, call: $call, output: $output);
