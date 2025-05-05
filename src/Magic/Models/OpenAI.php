@@ -32,9 +32,12 @@ class OpenAI extends ElElEm
     public static function models(?string $prefix = 'openai', ?string $prefixLabels = 'OpenAI'): Collection
     {
         return static::prefixModels([
-            'o1-preview' => 'GPT-o1 Preview',
-            'o1-mini' => 'GPT-o1 Mini',
-            'gpt-4-turbo' => 'GPT-4 Turbo',
+			'o1' => 'o1',
+			'o1-pro' => 'o1 Pro',
+			'o3-mini' => 'o3 Mini',
+			'o3' => 'o3',
+			'o4-mini' => 'o4 Mini',
+			'gpt-4-turbo' => 'GPT-4 Turbo',
             'gpt-4o' => 'GPT-4o',
             'gpt-4o-mini' => 'GPT-4o Mini',
         ], $prefix, $prefixLabels);
@@ -63,5 +66,44 @@ class OpenAI extends ElElEm
 	public static function o1_preview(ElElEmOptions $options = new ChatGptOptions): OpenAI
 	{
 		return new OpenAI('o1-preview');
+	}
+
+	public function getModelCost(): ?ModelCost
+	{
+		return match ($this->model) {
+			'o1' => new ModelCost(
+				inputCentsPer1K: ModelCost::pricePerMillionToCentsPerThousands(15),
+				outputCentsPer1K: ModelCost::pricePerMillionToCentsPerThousands(75)
+			),
+			'o1-pro' => new ModelCost(
+				inputCentsPer1K: ModelCost::pricePerMillionToCentsPerThousands(3),
+				outputCentsPer1K: ModelCost::pricePerMillionToCentsPerThousands(15)
+			),
+			'o3-mini' => new ModelCost(
+				inputCentsPer1K: ModelCost::pricePerMillionToCentsPerThousands(0.8),
+				outputCentsPer1K: ModelCost::pricePerMillionToCentsPerThousands(4)
+			),
+			'o3' => new ModelCost(
+				inputCentsPer1K: ModelCost::pricePerMillionToCentsPerThousands(0.8),
+				outputCentsPer1K: ModelCost::pricePerMillionToCentsPerThousands(4)
+			),
+			'o4-mini' => new ModelCost(
+				inputCentsPer1K: ModelCost::pricePerMillionToCentsPerThousands(0.8),
+				outputCentsPer1K: ModelCost::pricePerMillionToCentsPerThousands(4)
+			),
+			'gpt-4-turbo' => new ModelCost(
+				inputCentsPer1K: ModelCost::pricePerMillionToCentsPerThousands(0.8),
+				outputCentsPer1K: ModelCost::pricePerMillionToCentsPerThousands(4)
+			),
+			'gpt-4o' => new ModelCost(
+				inputCentsPer1K: ModelCost::pricePerMillionToCentsPerThousands(0.8),
+				outputCentsPer1K: ModelCost::pricePerMillionToCentsPerThousands(4)
+			),
+			'gpt-4o-mini' => new ModelCost(
+				inputCentsPer1K: ModelCost::pricePerMillionToCentsPerThousands(0.8),
+				outputCentsPer1K: ModelCost::pricePerMillionToCentsPerThousands(4)
+			),
+			default => null,
+		};
 	}
 }

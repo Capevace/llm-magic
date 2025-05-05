@@ -51,6 +51,9 @@ class Gemini extends ElElEm
             static::GEMINI_1_5_FLASH => 'Gemini 1.5 Flash',
 			static::GEMINI_2_0_FLASH => 'Gemini 2.0 Flash',
 			static::GEMINI_2_0_FLASH_LITE => 'Gemini 2.0 Flash Lite',
+			static::GEMINI_2_5_PRO_PREVIEW => 'Gemini 2.5 Pro Preview',
+			static::GEMINI_2_5_PRO_EXPERIMENTAL => 'Gemini 2.5 Pro Experimental',
+			static::GEMINI_2_5_FLASH_PREVIEW => 'Gemini 2.5 Flash Preview',
         ], $prefix, $prefixLabels);
     }
 

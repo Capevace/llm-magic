@@ -12,15 +12,17 @@ class Anthropic extends ElElEm
     use UsesAnthropicApi;
 
     public const HAIKU = 'claude-3-haiku-20240307';
+	public const HAIKU_3_5 = 'claude-3-5-haiku-latest';
 
-    public const SONNET = 'claude-3-sonnet-20240229';
+	public const SONNET = 'claude-3-sonnet-20240229';
+	public const SONNET_3_5 = 'claude-3-5-sonnet-latest';
+	public const SONNET_3_5_COMPUTER_USE = 'claude-3-5-sonnet-20241022';
+	public const SONNET_3_7 = 'claude-3-7-sonnet-latest';
 
-    public const OPUS = 'claude-3-opus-20240229';
+	public const OPUS = 'claude-3-opus-latest';
 
-    public const SONNET_3_5 = 'claude-3-5-sonnet-20240620';
-    public const SONNET_3_5_COMPUTER_USE = 'claude-3-5-sonnet-20241022';
 
-    public function __construct(
+	public function __construct(
         string $model,
         ElElEmOptions $options = new ElElEmOptions,
     ) {
@@ -39,13 +41,24 @@ class Anthropic extends ElElEm
 
     public function getModelCost(): ?ModelCost
     {
+//		Model	Base Input Tokens	Cache Writes	Cache Hits	Output Tokens
+//Claude 3.7 Sonnet	$3 / MTok	$3.75 / MTok	$0.30 / MTok	$15 / MTok
+//Claude 3.5 Sonnet	$3 / MTok	$3.75 / MTok	$0.30 / MTok	$15 / MTok
+//Claude 3.5 Haiku	$0.80 / MTok	$1 / MTok	$0.08 / MTok	$4 / MTok
+//Claude 3 Haiku	$0.25 / MTok	$0.30 / MTok	$0.03 / MTok	$1.25 / MTok
+//Claude 3 Opus	$15 / MTok	$18.75 / MTok	$1.50 / MTok	$75 / MTok
         return match ($this->model) {
             Anthropic::HAIKU => new ModelCost(
                 inputCentsPer1K: ModelCost::pricePerMillionToCentsPerThousands(0.25),
                 outputCentsPer1K: ModelCost::pricePerMillionToCentsPerThousands(1.25)
             ),
+			Anthropic::HAIKU_3_5 => new ModelCost(
+                inputCentsPer1K: ModelCost::pricePerMillionToCentsPerThousands(0.8),
+                outputCentsPer1K: ModelCost::pricePerMillionToCentsPerThousands(4)
+            ),
             Anthropic::SONNET,
-            Anthropic::SONNET_3_5, => new ModelCost(
+            Anthropic::SONNET_3_5,
+			Anthropic::SONNET_3_7 => new ModelCost(
                 inputCentsPer1K: ModelCost::pricePerMillionToCentsPerThousands(3),
                 outputCentsPer1K: ModelCost::pricePerMillionToCentsPerThousands(15)
             ),
