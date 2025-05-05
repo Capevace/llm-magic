@@ -6,9 +6,9 @@ use Mateffy\Magic\Chat\Prompt;
 
 trait HasPrompt
 {
-    public ?Prompt $prompt = null;
+    public Prompt|string|null $prompt = null;
 
-    public function prompt(?Prompt $prompt): static
+    public function prompt(Prompt|string|null $prompt): static
     {
         $this->prompt = $prompt;
 

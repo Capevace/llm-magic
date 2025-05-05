@@ -2,6 +2,7 @@
 
 namespace Mateffy\Magic\Builder;
 
+use Mateffy\Magic;
 use Mateffy\Magic\Builder\Concerns\HasArtifacts;
 use Mateffy\Magic\Builder\Concerns\HasAttempts;
 use Mateffy\Magic\Builder\Concerns\HasDebugger;
@@ -40,7 +41,11 @@ class ChatPreconfiguredModelBuilder
 
     public function build(): Prompt
     {
-        return $this->prompt ?? new class($this) implements Prompt
+        if ($this->prompt instanceof Prompt) {
+            return $this->prompt;
+        }
+
+        return new class($this) implements Prompt
         {
             public function __construct(protected ChatPreconfiguredModelBuilder $builder) {}
 
@@ -55,29 +60,37 @@ class ChatPreconfiguredModelBuilder
                 $current = [];
                 $role = null;
 
-                foreach ($this->builder->messages as $message) {
-                    if ($message instanceof Step && count($current) > 0) {
-                        $messages->push(new Step(role: $role, content: $current));
-                        $current = [];
+                // We allow to pass a string to ->prompt() to make it easier to use. This is ignored if
+                // ->messages() is used too.
+                if (is_string($this->builder->prompt) && count($this->builder->messages) === 0) {
+                    $messages->push(new Step(role: Prompt\Role::User, content: [
+                        Step\Text::make($this->builder->prompt),
+                    ]));
+                } else {
+                    foreach ($this->builder->messages as $message) {
+                        if ($message instanceof Step && count($current) > 0) {
+                            $messages->push(new Step(role: $role, content: $current));
+                            $current = [];
 
-                        $messages->push($message);
+                            $messages->push($message);
 
-                        continue;
-                    } else if ($message instanceof Step) {
-                        $messages->push($message);
+                            continue;
+                        } else if ($message instanceof Step) {
+                            $messages->push($message);
 
-                        continue;
-                    } else if ($role && $message->role !== $role) {
-                        $messages->push(new Step(role: $role, content: $current));
-                        $current = [];
+                            continue;
+                        } else if ($role && $message->role !== $role) {
+                            $messages->push(new Step(role: $role, content: $current));
+                            $current = [];
+                        }
+
+                        $role = $message->role;
+                        $current[] = match($message::class) {
+                            TextMessage::class => Step\Text::make($message->content),
+                            ToolCallMessage::class => Step\ToolUse::call($message->call),
+                            ToolResultMessage::class => Step\ToolResult::output($message->call, $message->output),
+                        };
                     }
-
-                    $role = $message->role;
-                    $current[] = match($message::class) {
-                        TextMessage::class => Step\Text::make($message->content),
-                        ToolCallMessage::class => \Mateffy\Magic\Chat\Messages\Step\ToolUse::call($message->call),
-                        ToolResultMessage::class => Step\ToolResult::output($message->call, $message->output),
-                    };
                 }
 
                 if (count($current) > 0) {
@@ -112,6 +125,7 @@ class ChatPreconfiguredModelBuilder
 			}
 		};
     }
+
 
     public function stream(): MessageCollection
     {

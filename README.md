@@ -8,8 +8,53 @@ Also enables developer-friendly extraction of structured and validated JSON data
 
 ```php
 use Mateffy\Magic;
+use Mateffy\Magic\Chat\Messages\Step;
+use Mateffy\Magic\Chat\Tool;
 
-$joke = Magic::ask('Tell me a joke');
+$answer = Magic::ask('What is the capital of France?');
+// -> "The capital of France is Paris."
+
+$messages = Magic::chat()
+    ->model('google/gemini-2.0-flash-lite')
+    ->temperature(0.5)
+    ->messages([
+        Step::user([
+            Step\Text::make('What is in this picture and where was it taken?'),
+            Step\Image::make('https://example.com/eiffel-tower.jpg'),
+        ]),
+        Step::assistant([
+            Step\Text::make('The picture shows the Eiffel Tower, which is located in Paris, France.'),
+        ]),
+        Step::user('How much is a flight to Paris?'),
+    ])
+    ->tools([
+        Tool::make('search_flight')
+            ->description('Search for flights to a given destination. Pass the departure airport code and the destination airport code in the ISO 3166-1 alpha-3 format.')
+            ->callback(fn (string $from_airport_code, string $to_airport_code) {
+                return app(FlightService::class)
+                    ->search($from_airport_code, $to_airport_code)
+                    ->toArray();
+            }),
+    ]);
+])
+
+$answer = Magic::chat()
+    ->model('google/gemini-2.0-flash-lite')
+    ->prompt('What is the capital of France?')
+    ->stream()
+    ->text();
+    
+$data = Magic::extract()
+    ->schema([
+        'type' => 'object',
+        'properties' => [
+            'name' => ['type' => 'string'],
+            'age' => ['type' => 'integer'],
+        ],
+        'required' => ['name', 'age'],
+    ])
+    ->artifacts([$artifact])
+    ->send();
 ```
 
 

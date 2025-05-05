@@ -20,6 +20,7 @@ use Mateffy\Magic\Chat\Messages\TextMessage;
 use Mateffy\Magic\Chat\Prompt;
 use Mateffy\Magic\Chat\TokenStats;
 use Mateffy\Magic\Chat\ToolChoice;
+use Mateffy\Magic\Exceptions\LLMException;
 use Mateffy\Magic\Exceptions\UnknownInferenceException;
 use Mateffy\Magic\Support\ApiTokens\TokenResolver;
 use Mateffy\Magic\Models\Decoders\OpenAiResponseDecoder;
@@ -181,8 +182,9 @@ trait UsesOpenAiApi
 			->values();
 	}
 
-	/**
+    /**
      * @throws UnknownInferenceException
+     * @throws LLMException
      */
     public function stream(Prompt $prompt, ?Closure $onMessageProgress = null, ?Closure $onMessage = null, ?Closure $onTokenStats = null, ?Closure $onDataPacket = null): MessageCollection
     {
@@ -237,6 +239,8 @@ trait UsesOpenAiApi
             );
 
             return MessageCollection::make($decoder->process());
+        } catch (LLMException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             throw new UnknownInferenceException($e->getMessage(), previous: $e);
         }

@@ -4,6 +4,7 @@ namespace Mateffy\Magic\Extraction\Strategies\Concerns;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Mateffy\Magic;
 use Mateffy\Magic\Chat\Prompt\SequentialExtractorPrompt;
 
 trait GenerateWithBatchedPrompt
@@ -34,6 +35,15 @@ trait GenerateWithBatchedPrompt
 			]);
 		}
 
+        $solution = Magic::chat()
+            ->prompt('What is the result of ((1000 - 900) + 26) / 3?') ->tools([
+            'add' => fn (float $a, float $b) => $a + $b, 'subtract' => fn (float $a, float $b) => $a - $b, 'multiply' => fn (float $a, float $b) => $a * $b, 'divide' => fn (float $a, float $b) => $a / $b,
+            ]) ->toolChoice(ToolChoice::Required) ->send()
+            ->lastText();
+            // -> "The result is 42"
+
 		return $data;
     }
 }
+
+

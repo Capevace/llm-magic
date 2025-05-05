@@ -4,6 +4,7 @@ namespace Mateffy\Magic\Extraction\Strategies;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use JsonException;
 use Mateffy\Magic\Extraction\ArtifactBatcher;
 use Mateffy\Magic\Extraction\Artifacts\Artifact;
 use Mateffy\Magic\Extraction\Strategies\Concerns\GenerateWithBatchedPrompt;
@@ -16,9 +17,10 @@ class ParallelAutoMergeStrategy extends Extractor
 	use SupportsConcurrency;
 	use SupportsFindingDuplicatesWithLlm;
 
-    /**
-     * @param Artifact[] $artifacts
-     */
+	/**
+	 * @param Artifact[] $artifacts
+	 * @throws JsonException
+	 */
     public function run(array $artifacts): array
     {
 		$batches = ArtifactBatcher::batch(
