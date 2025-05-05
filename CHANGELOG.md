@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.1.1 (2025-05-05)
+- Fixed a bug with accidentally included code in `ParallelAutoMergeStrategy`
+
 # 1.1.0 (2025-05-04)
 
 - Updated `open-ai/client` to v0.12.0 for Gemini support
