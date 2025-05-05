@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.1.2 (2025-05-05)
+- Added the new models from 1.1 to the internal model list also
+
 # 1.1.1 (2025-05-05)
 - Fixed a bug with accidentally included code in `ParallelAutoMergeStrategy`
 
