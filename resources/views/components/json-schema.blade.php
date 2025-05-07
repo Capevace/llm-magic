@@ -3,6 +3,7 @@
     'statePath' => '$wire.resultData',
     'validationStatePath' => '$wire.validationErrors',
     'disabled' => false,
+    'table' => false,
 ])
 
 <div
@@ -15,6 +16,7 @@
         :validation-root-state-path="$validationStatePath"
         :$schema
         :$disabled
+        :$table
     />
 </div>
 

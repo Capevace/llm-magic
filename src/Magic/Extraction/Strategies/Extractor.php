@@ -143,9 +143,9 @@ abstract class Extractor implements Strategy
 		}
 	}
 
-	protected function logDataProgress(array $data): void
+	protected function logDataProgress(?array $data): void
 	{
-		if ($this->onDataProgress) {
+		if ($data && $this->onDataProgress) {
 			($this->onDataProgress)($data);
 		}
 	}

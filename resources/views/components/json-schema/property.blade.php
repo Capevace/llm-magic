@@ -13,6 +13,7 @@
     'disabled' => false,
     'removableFrom' => null,
     'removableIndex' => null,
+    'table' => false,
 ])
 
 <?php
@@ -81,7 +82,7 @@
                 @endif
             </div>
 
-            @if ($table = $getMagicUiTableConfig($schema))
+            @if ($getMagicUiTableConfig($schema) || $table)
                 <x-llm-magic::json-schema.table
                     :name="$name"
                     :state-path="$statePath"
@@ -306,6 +307,13 @@
                         :$required
                         :type="match (true) {
                             $matchesTypes(($schema['type'] ?? null), ['integer', 'number', 'float']) => 'number',
+                            $matchesTypes(($schema['type'] ?? null), ['string']) && ($schema['format'] ?? null) === 'email' => 'email',
+                            $matchesTypes(($schema['type'] ?? null), ['string']) && ($schema['format'] ?? null) === 'url' => 'url',
+                            $matchesTypes(($schema['type'] ?? null), ['string']) && ($schema['format'] ?? null) === 'date' => 'date',
+                            $matchesTypes(($schema['type'] ?? null), ['string']) && (($schema['format'] ?? null) === 'date-time' || ($schema['format'] ?? null) === 'datetime') => 'datetime-local',
+                            $matchesTypes(($schema['type'] ?? null), ['string']) && ($schema['format'] ?? null) === 'time' => 'time',
+                            $matchesTypes(($schema['type'] ?? null), ['string']) && ($schema['format'] ?? null) === 'color' => 'color',
+                            $matchesTypes(($schema['type'] ?? null), ['string']) && ($schema['format'] ?? null) === 'phone' => 'tel',
                             $matchesTypes(($schema['type'] ?? null), ['string']) => 'text',
                             default => 'text',
                         }"

@@ -69,101 +69,111 @@ trait UsesOpenAiApi
 	protected function prepareMessages(array $messages): Collection
 	{
 		return collect($messages)
-            ->flatMap(callback: fn (Message $message) => match ($message::class) {
-                TextMessage::class => [
-                    [
-                        'role' => $message->role,
-                        'content' => $message->content,
-                    ],
-                ],
-                JsonMessage::class => [
-                    [
-                        'role' => $message->role,
-                        'content' => json_encode($message->data),
-                    ],
-                ],
-                ToolCallMessage::class => [
-                    [
-                        'role' => $message->role,
-                        'tool_calls' => [
-                            [
-                                'id' => $message->call->id,
-                                'type' => 'function',
-                                'function' => [
-                                    'name' => $message->call->name,
-                                    'arguments' => json_encode($message->call->arguments, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-                                ]
-                            ]
-                        ],
-                        'content' => json_encode($message->call->arguments),
-                        'tool_call_id' => $message->call->id,
-                    ],
-                ],
-                ToolResultMessage::class => [
-                    [
-                        'role' => 'tool',
-                        'content' => $message->text(),
-                        'tool_call_id' => $message->call->id,
-                    ],
-                ],
-                Step::class => (function () use ($message) {
-                    $tools = collect($message->content)
-                        ->filter(fn (ContentInterface $message) => $message instanceof ToolUse || $message instanceof ToolResult)
-                        ->map(fn (ContentInterface $message) => match ($message::class) {
-                            ToolUse::class => [
-                                'role' => 'assistant',
-                                'tool_calls' => [
-                                    [
-                                        'id' => $message->call->id,
-                                        'type' => 'function',
-                                        'function' => [
-                                            'name' => $message->call->name,
-                                            'arguments' => json_encode($message->call->arguments, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-                                        ]
-                                    ]
-                                ],
-                                'content' => json_encode($message->call->arguments),
-                                'tool_call_id' => $message->call->id,
-                            ],
-                            ToolResult::class => [
-                                'role' => 'tool',
-                                'content' => json_encode($message->output, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-                                'tool_call_id' => $message->call->id,
-                            ],
-                        })
-                        ->values();
+            ->flatMap(callback: function (Message $message) {
+				$id = ($message instanceof ToolCallMessage || $message instanceof ToolResultMessage)
+					? $message->call->id ?? null
+					: null;
 
-                    $content = collect($message->content)
-                        ->filter(fn (ContentInterface $message) => !($message instanceof ToolUse || $message instanceof ToolResult))
-                        ->values();
+				return match ($message::class) {
+					TextMessage::class => [
+						[
+							'role' => $message->role,
+							'content' => $message->content,
+						],
+					],
+					JsonMessage::class => [
+						[
+							'role' => $message->role,
+							'content' => json_encode($message->data),
+						],
+					],
+					ToolCallMessage::class => [
+						[
+							'role' => $message->role,
+							'tool_calls' => [
+								[
+									'id' => $id,
+									'type' => 'function',
+									'function' => [
+										'name' => $message->call->name,
+										'arguments' => json_encode($message->call->arguments, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+									]
+								]
+							],
+							'content' => json_encode($message->call->arguments),
+							'tool_call_id' => $id
+						],
+					],
+					ToolResultMessage::class => [
+						[
+							'role' => 'tool',
+							'content' => $message->text(),
+							'tool_call_id' => $id,
+						],
+					],
+					Step::class => (function () use ($message) {
+						$tools = collect($message->content)
+							->filter(fn (ContentInterface $message) => $message instanceof ToolUse || $message instanceof ToolResult)
+							->map(function (ContentInterface $message) {
+								$id = $message->call->id ?? null;
+q
+								return match ($message::class) {
+									ToolUse::class => [
+										'role' => 'assistant',
+										'tool_calls' => [
+											[
+												'id' => $id,
+												'type' => 'function',
+												'function' => [
+													'name' => $message->call->name,
+													'arguments' => json_encode($message->call->arguments, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+												]
+											]
+										],
+										'content' => json_encode($message->call->arguments),
+										'tool_call_id' => $id,
+									],
+									ToolResult::class => [
+										'role' => 'tool',
+										'content' => json_encode($message->output, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+										'tool_call_id' => $id,
+									],
+								};
+							})
+							->values();
 
-                    return array_filter([
-                        ...$tools,
-                        $content->isNotEmpty()
-                            ? [
-                                'role' => $message->role,
-                                'content' => $content
-                                    ->map(fn (ContentInterface $message) => match ($message::class) {
-                                        Text::class => [
-                                            'type' => 'text',
-                                            'text' => $message->text,
-                                        ],
-                                        Image::class => [
-                                            'type' => 'image_url',
-                                            'image_url' => [
-                                                'url' => "data:{$message->mime};base64,{$message->imageBase64}"
-                                            ]
-                                        ],
-                                    })
-									->values()
-                                    ->toArray(),
-                            ]
-                            : null,
-                    ]);
-                })(),
+						$content = collect($message->content)
+							->filter(fn (ContentInterface $message) => !($message instanceof ToolUse || $message instanceof ToolResult))
+							->values();
 
-                default => null,
-            })
+						return array_filter([
+							...$tools,
+							$content->isNotEmpty()
+								? [
+									'role' => $message->role,
+									'content' => $content
+										->map(fn (ContentInterface $message) => match ($message::class) {
+											Text::class => [
+												'type' => 'text',
+												'text' => $message->text,
+											],
+											Image::class => [
+												'type' => 'image_url',
+												'image_url' => [
+													'url' => "data:{$message->mime};base64,{$message->imageBase64}"
+												]
+											],
+										})
+										->values()
+										->toArray(),
+								]
+								: null,
+						]);
+					})(),
+
+					default => null,
+				};
+			})
             ->filter()
             ->values();
 	}

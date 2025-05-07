@@ -27,7 +27,7 @@
             </x-slot:trigger>
 
             <x-filament::dropdown.list>
-                @foreach($schema['properties'] as $property => $propertySchema)
+                @foreach($schema['properties'] ?? [] as $property => $propertySchema)
                     <?php
                         $custom_label = data_get($propertySchema, 'magic_ui.label');
                         $label = $custom_label ?? str($property)->title()->replace('_', ' ')->__toString();
@@ -68,7 +68,7 @@
 {{--        </div>--}}
 
         <?php
-            $defaultData = collect($schema['properties'])->mapWithKeys(function ($propertySchema, $property) {
+            $defaultData = collect($schema['properties'] ?? [])->mapWithKeys(function ($propertySchema, $property) {
                 $type = $propertySchema['type'] ?? 'string';
                 $nullable = $type === 'null' || (is_array($type) && in_array('null', $type));
 
@@ -100,7 +100,7 @@
         <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 flex-1">
             <thead class="text-xs text-gray-700 bg-gray-50 dark:bg-gray-700 dark:text-gray-400 rounded-t-lg border-b border-gray-200 dark:border-gray-700">
                 <tr>
-                    @foreach($schema['properties'] as $property => $propertySchema)
+                    @foreach($schema['properties'] ?? [] as $property => $propertySchema)
                         <?php
                             $custom_label = data_get($propertySchema, 'magic_ui.label');
                             $label = $custom_label ?? str($property)->title()->replace('_', ' ')->__toString();
@@ -144,7 +144,7 @@
                         'bg-gray-50 dark:bg-gray-900': {{ $name }}_focused,
                     }"
                 >
-                    @foreach($schema['properties'] as $property => $propertySchema)
+                    @foreach($schema['properties'] ?? [] as $property => $propertySchema)
                         @php
                             $custom_label = data_get($propertySchema, 'magic_ui.label');
                             $label = $custom_label ?? str($property)->title()->replace('_', ' ')->__toString();

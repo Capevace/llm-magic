@@ -39,7 +39,9 @@ class SequentialAutoMergeStrategy extends Extractor
 				$currentData = $newData;
 			}
 
-			$this->logDataProgress(data: $currentData);
+			if ($currentData) {
+				$this->logDataProgress(data: $currentData);
+			}
         }
 
 		// Run an initial de-duplication based on hashing. Finds only exact 1:1 duplicates.
