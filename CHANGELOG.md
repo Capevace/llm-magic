@@ -2,6 +2,7 @@
 
 # 1.1.3 (2025-05-07)
 - Fixed some tool calling edge-cases
+- Added support for [Data Wizard Playground](https://data-wizard.ai/app/playground)
 
 # 1.1.2 (2025-05-05)
 - Added the new models from 1.1 to the internal model list also
