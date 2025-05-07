@@ -116,7 +116,7 @@ trait UsesOpenAiApi
 							->filter(fn (ContentInterface $message) => $message instanceof ToolUse || $message instanceof ToolResult)
 							->map(function (ContentInterface $message) {
 								$id = $message->call->id ?? null;
-q
+
 								return match ($message::class) {
 									ToolUse::class => [
 										'role' => 'assistant',

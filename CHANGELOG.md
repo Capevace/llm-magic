@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.1.4 (2025-05-07)
+- Fixed a syntax typo
+
 # 1.1.3 (2025-05-07)
 - Fixed some tool calling edge-cases
 - Added support for [Data Wizard Playground](https://data-wizard.ai/app/playground)
