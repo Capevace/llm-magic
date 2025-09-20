@@ -3,10 +3,10 @@
 namespace Mateffy\Magic\Models;
 
 use Illuminate\Support\Collection;
-use Mateffy\Magic\Support\ApiTokens\TokenResolver;
 use Mateffy\Magic\Models\Options\ElElEmOptions;
 use Mateffy\Magic\Models\Options\Organization;
-use Mateffy\Magic\Models\Providers\UsesOpenAiApi;
+use Mateffy\Magic\Models\Providers\LLM\UsesOpenAiApi;
+use Mateffy\Magic\Support\ApiTokens\TokenResolver;
 
 class OpenRouter extends ElElEm
 {

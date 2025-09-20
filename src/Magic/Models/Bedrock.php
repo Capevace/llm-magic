@@ -4,7 +4,7 @@ namespace Mateffy\Magic\Models;
 
 use Mateffy\Magic\Models\Options\ElElEmOptions;
 use Mateffy\Magic\Models\Options\Organization;
-use Mateffy\Magic\Models\Providers\UsesAwsBedrockApi;
+use Mateffy\Magic\Models\Providers\LLM\UsesAwsBedrockApi;
 
 class Bedrock extends ElElEm
 {

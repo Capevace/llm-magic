@@ -1,6 +1,6 @@
 <?php
 
-$builtin_default = 'openai/gpt-4o-mini';
+$builtin_default = 'openai/gpt-4o';
 $builtin_cheap = 'openai/gpt-4o-mini';
 $builtin_default_embeddings = 'openai/' . \Mateffy\Magic\Embeddings\OpenAIEmbeddings::TEXT_EMBEDDING_3_SMALL;
 
@@ -14,7 +14,28 @@ return [
 		'extraction' => env('LLM_MAGIC_EXTRACTION_MODEL', null),
 		'chat' => env('LLM_MAGIC_CHAT_MODEL', null),
 		'embeddings' => env('LLM_MAGIC_EMBEDDINGS_MODEL', $builtin_default_embeddings),
+		'image' => env('LLM_MAGIC_IMAGE_MODEL', \Mateffy\Magic\Models\Image\OpenAI::MODEL_GPT_IMAGE_1),
     ],
+	'chat_history' => [
+		'default' => env('LLM_MAGIC_CHAT_DEFAULT_HISTORY', \Mateffy\Magic\History\MessageHistory::FILE),
+
+		'file' => [
+			'disk' => 'local',
+			'prefix' => null,
+			'path' => 'magic/chats',
+		],
+		'cache' => [
+			'prefix' => 'magic.chats',
+			'duration' => 60 * 60 * 24, // 1 day
+		],
+		'database' => [
+			'models' => [
+				'thread' => \Illuminate\Database\Eloquent\Model::class,
+				'message' => \Illuminate\Database\Eloquent\Model::class,
+			],
+			'use_numeric_ids' => false,
+		],
+	],
 	'extraction' => [
 		'concurrency' => intval(env('LLM_MAGIC_EXTRACTION_CONCURRENCY', 3)),
 	],
@@ -40,7 +61,13 @@ return [
         'openai' => [
             'token' => env('OPENAI_API_KEY'),
             'organization_id' => env('OPENAI_ORGANIZATION_ID'),
+			'base_uri' => env('OPENAI_BASE_URI', 'api.openai.com/v1'),
         ],
+		'openai-image' => [
+			'token' => env('OPENAI_IMAGE_API_KEY'),
+			'organization_id' => env('OPENAI_IMAGE_ORGANIZATION_ID'),
+			'base_uri' => env('OPENAI_IMAGE_BASE_URI'),
+		],
         'groq' => [
             'token' => env('GROQ_API_KEY'),
         ],

@@ -1,6 +1,6 @@
 <?php
 
-namespace Mateffy\Magic\Models\Providers;
+namespace Mateffy\Magic\Models\Providers\LLM;
 
 use Closure;
 use GuzzleHttp\Client;
@@ -11,24 +11,24 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Mateffy\Magic\Chat\MessageCollection;
-use Mateffy\Magic\Chat\Messages\ToolCallMessage;
-use Mateffy\Magic\Chat\Messages\ToolResultMessage;
 use Mateffy\Magic\Chat\Messages\JsonMessage;
 use Mateffy\Magic\Chat\Messages\Message;
 use Mateffy\Magic\Chat\Messages\Step;
-use Mateffy\Magic\Chat\Messages\Step\Image;
 use Mateffy\Magic\Chat\Messages\Step\ContentInterface;
+use Mateffy\Magic\Chat\Messages\Step\Image;
 use Mateffy\Magic\Chat\Messages\Step\Text;
 use Mateffy\Magic\Chat\Messages\Step\ToolResult;
 use Mateffy\Magic\Chat\Messages\Step\ToolUse;
 use Mateffy\Magic\Chat\Messages\TextMessage;
+use Mateffy\Magic\Chat\Messages\ToolCallMessage;
+use Mateffy\Magic\Chat\Messages\ToolResultMessage;
 use Mateffy\Magic\Chat\Prompt;
 use Mateffy\Magic\Chat\TokenStats;
 use Mateffy\Magic\Chat\ToolChoice;
 use Mateffy\Magic\Exceptions\InvalidRequest;
 use Mateffy\Magic\Exceptions\TooManyTokensForModelRequested;
-use Mateffy\Magic\Support\ApiTokens\TokenResolver;
 use Mateffy\Magic\Models\Decoders\ClaudeResponseDecoder;
+use Mateffy\Magic\Support\ApiTokens\TokenResolver;
 use Mateffy\Magic\Tools\InvokableTool;
 
 trait UsesAnthropicApi

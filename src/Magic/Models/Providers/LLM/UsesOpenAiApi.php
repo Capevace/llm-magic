@@ -1,48 +1,36 @@
 <?php
 
-namespace Mateffy\Magic\Models\Providers;
+namespace Mateffy\Magic\Models\Providers\LLM;
 
 use Closure;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Mateffy\Magic\Chat\MessageCollection;
-use Mateffy\Magic\Chat\Messages\ToolCallMessage;
-use Mateffy\Magic\Chat\Messages\ToolResultMessage;
 use Mateffy\Magic\Chat\Messages\JsonMessage;
 use Mateffy\Magic\Chat\Messages\Message;
 use Mateffy\Magic\Chat\Messages\Step;
-use Mateffy\Magic\Chat\Messages\Step\Image;
 use Mateffy\Magic\Chat\Messages\Step\ContentInterface;
+use Mateffy\Magic\Chat\Messages\Step\Image;
 use Mateffy\Magic\Chat\Messages\Step\Text;
 use Mateffy\Magic\Chat\Messages\Step\ToolResult;
 use Mateffy\Magic\Chat\Messages\Step\ToolUse;
 use Mateffy\Magic\Chat\Messages\TextMessage;
+use Mateffy\Magic\Chat\Messages\ToolCallMessage;
+use Mateffy\Magic\Chat\Messages\ToolResultMessage;
 use Mateffy\Magic\Chat\Prompt;
 use Mateffy\Magic\Chat\TokenStats;
 use Mateffy\Magic\Chat\ToolChoice;
 use Mateffy\Magic\Exceptions\LLMException;
 use Mateffy\Magic\Exceptions\UnknownInferenceException;
-use Mateffy\Magic\Support\ApiTokens\TokenResolver;
 use Mateffy\Magic\Models\Decoders\OpenAiResponseDecoder;
+use Mateffy\Magic\Models\Providers\Auth\UsesOpenAiApiAuth;
 use Mateffy\Magic\Tools\InvokableTool;
+use OpenAI;
 use OpenAI\Client;
 
 trait UsesOpenAiApi
 {
-    protected function getOpenAiApiKey(): string
-    {
-		return app(TokenResolver::class)->resolve('openai');
-    }
-
-    protected function getOpenAiOrganization(): ?string
-    {
-		return app(TokenResolver::class)->resolve('openai', 'organization_id');
-    }
-
-    protected function getOpenAiBaseUri(): ?string
-    {
-        return 'api.openai.com/v1';
-    }
+	use UsesOpenAiApiAuth;
 
 	protected function getSystemMessageRoleName(): string
 	{
@@ -59,7 +47,7 @@ trait UsesOpenAiApi
 
 	protected function createClient(): Client
 	{
-		return \OpenAI::factory()
+		return OpenAI::factory()
 			->withApiKey($this->getOpenAiApiKey())
 			->withOrganization($this->getOpenAiOrganization())
 			->withBaseUri($this->getOpenAiBaseUri())

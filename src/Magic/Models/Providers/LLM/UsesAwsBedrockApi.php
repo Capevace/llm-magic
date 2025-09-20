@@ -1,6 +1,6 @@
 <?php
 
-namespace Mateffy\Magic\Models\Providers;
+namespace Mateffy\Magic\Models\Providers\LLM;
 
 use Aws\BedrockRuntime\BedrockRuntimeClient;
 use Closure;
@@ -11,8 +11,8 @@ use Mateffy\Magic\Chat\TokenStats;
 use Mateffy\Magic\Chat\ToolChoice;
 use Mateffy\Magic\Exceptions\InvalidRequest;
 use Mateffy\Magic\Exceptions\TooManyTokensForModelRequested;
-use Mateffy\Magic\Support\ApiTokens\TokenResolver;
 use Mateffy\Magic\Models\Decoders\ClaudeResponseDecoder;
+use Mateffy\Magic\Support\ApiTokens\TokenResolver;
 use Mateffy\Magic\Tools\InvokableTool;
 use OpenAI\Responses\Chat\CreateResponse;
 use Psr\Http\Message\StreamInterface;

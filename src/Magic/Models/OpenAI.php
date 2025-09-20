@@ -6,7 +6,7 @@ use Illuminate\Support\Collection;
 use Mateffy\Magic\Models\Options\ChatGptOptions;
 use Mateffy\Magic\Models\Options\ElElEmOptions;
 use Mateffy\Magic\Models\Options\Organization;
-use Mateffy\Magic\Models\Providers\UsesOpenAiApi;
+use Mateffy\Magic\Models\Providers\LLM\UsesOpenAiApi;
 
 class OpenAI extends ElElEm
 {

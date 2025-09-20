@@ -95,7 +95,8 @@ class OpenAiResponseDecoder implements Decoder
                 // End the previous message, if one exists.
 				// Edge case: a final \n is sent by the Gemini API to signal the end of the conversation, but it includes the role.
 				// It will however set the finishReason to "stop" as well, so we still add the "\n" to the last message.
-                if ($delta->role !== null && $message !== null && $choice->finishReason === null) {
+
+                if ($delta->role !== null && $message !== null && count($delta->toolCalls) > 0) {
                     $pushMessage();
                 }
 

@@ -60,14 +60,16 @@ class ChatPreconfiguredModelBuilder
                 $current = [];
                 $role = null;
 
+				$doesntHaveMessages = $this->builder->getHistory()->all()->isEmpty();
+
                 // We allow to pass a string to ->prompt() to make it easier to use. This is ignored if
                 // ->messages() is used too.
-                if (is_string($this->builder->prompt) && count($this->builder->messages) === 0) {
+                if (is_string($this->builder->prompt) && $doesntHaveMessages) {
                     $messages->push(new Step(role: Prompt\Role::User, content: [
                         Step\Text::make($this->builder->prompt),
                     ]));
                 } else {
-                    foreach ($this->builder->messages as $message) {
+                    foreach ($this->builder->getHistory()->all() as $message) {
                         if ($message instanceof Step && count($current) > 0) {
                             $messages->push(new Step(role: $role, content: $current));
                             $current = [];
@@ -141,7 +143,7 @@ class ChatPreconfiguredModelBuilder
             }
         }
 
-        $messages = $this->model
+        $messages = $this->getModel()
 			->stream(
 				prompt: $prompt,
 				onMessageProgress: function () use ($self, $debugger) {
@@ -193,7 +195,7 @@ class ChatPreconfiguredModelBuilder
     {
         $prompt = $this->build();
 
-        return MessageCollection::make($this->model->send($prompt));
+        return MessageCollection::make($this->getModel()->send($prompt));
     }
 
     public function handleMessages(MessageCollection $messages, bool $ignoreInterrupts = false): MessageCollection

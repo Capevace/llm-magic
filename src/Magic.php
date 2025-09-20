@@ -3,10 +3,12 @@
 namespace Mateffy;
 
 use Closure;
+use Illuminate\Container\Container;
 use Illuminate\Support\Collection;
 use Mateffy\Magic\Builder\ChatPreconfiguredModelBuilder;
 use Mateffy\Magic\Builder\EmbeddingsBuilder;
 use Mateffy\Magic\Builder\ExtractionLLMBuilder;
+use Mateffy\Magic\Builder\ImageGenerationBuilder;
 use Mateffy\Magic\Chat\Messages\TextMessage;
 use Mateffy\Magic\Chat\Signals\EndConversation;
 use Mateffy\Magic\Embeddings\OpenAIEmbeddings;
@@ -29,6 +31,7 @@ use Mateffy\Magic\Models\Mistral;
 use Mateffy\Magic\Models\OpenAI;
 use Mateffy\Magic\Models\OpenRouter;
 use Mateffy\Magic\Models\TogetherAI;
+use Mateffy\Magic\Models\Image;
 use Mateffy\Magic\Tools\Prebuilt\MagicReturnTool;
 use ReflectionException;
 use Throwable;
@@ -39,12 +42,17 @@ class Magic
 
     public static function extract(): ExtractionLLMBuilder
     {
-        return new ExtractionLLMBuilder;
+        return Container::getInstance()->make(ExtractionLLMBuilder::class);
     }
 
     public static function chat(): ChatPreconfiguredModelBuilder
     {;
-        return new ChatPreconfiguredModelBuilder;
+        return Container::getInstance()->make(ChatPreconfiguredModelBuilder::class);
+    }
+
+	public static function image(): ImageGenerationBuilder
+    {;
+        return Container::getInstance()->make(ImageGenerationBuilder::class);
     }
 
     public static function ask(string $prompt, array $schema = ['type' => 'string'], string|LLM|null $model = null, bool $sentence = true): mixed
@@ -184,9 +192,21 @@ class Magic
             ->sortBy(fn ($name, $key) => $key);
     }
 
+	/**
+	 * Get all the registered models in a {model_key: model_label} format
+	 * @return Collection<string, string>
+	 */
+    public static function imageModels(): Collection
+    {
+        return collect([
+            ...Image\OpenAI::models(),
+        ])
+            ->sortBy(fn ($name, $key) => $key);
+    }
+
     public static function defaultModelName(): string
     {
-        return config('llm-magic.llm.default');
+        return config('llm-magic.models.default') ?? config('llm-magic.llm.default');
     }
 
     public static  function defaultModelLabel(): string
@@ -198,6 +218,16 @@ class Magic
     {
         return ElElEm::fromString(self::defaultModelName());
     }
+
+	public static function defaultImageModelName(): string
+    {
+        return config('llm-magic.models.image');
+    }
+
+	public static  function defaultImageModelLabel(): string
+	{
+		return Magic::models()->get(Magic::defaultImageModelName()) ?? Magic::defaultImageModelName();
+	}
 
 	/**
 	 * @return Collection<string, class-string<Strategy>>

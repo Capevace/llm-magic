@@ -23,6 +23,10 @@ trait HasStrategy
     {
         $strategies = Magic::getExtractionStrategies();
 
+		if (class_exists($this->strategy) && in_array(Strategy::class, class_implements($this->strategy))) {
+			return $this->strategy;
+		}
+
 		if (!isset($strategies[$this->strategy])) {
 			throw new \InvalidArgumentException("Unknown strategy: {$this->strategy}");
 		}
@@ -35,7 +39,7 @@ trait HasStrategy
 		$strategyClass = $this->getStrategyClass();
 
         return $strategyClass::make(
-            llm: $this->model,
+            llm: $this->getModel(),
 			contextOptions: $this->getContextOptions(),
 			outputInstructions: $this->outputInstructions,
 			schema: $this->schema,

@@ -7,7 +7,7 @@ use Mateffy\Magic\Models\LLM;
 
 trait HasModel
 {
-    public LLM $model;
+    protected LLM $model;
 
     public function model(string|LLM $model): static
     {
@@ -29,4 +29,20 @@ trait HasModel
 
         return $this;
     }
+
+	public static function getDefaultModel(): LLM
+	{
+		$preconfigured_models = config('llm-magic.models.default');
+
+		return ElElEm::fromString($preconfigured_models);
+	}
+
+	public function getModel(): LLM
+	{
+		if (!isset($this->model)) {
+			$this->model = self::getDefaultModel();
+		}
+
+		return $this->model;
+	}
 }

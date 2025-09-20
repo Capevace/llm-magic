@@ -5,7 +5,7 @@ namespace Mateffy\Magic\Models;
 use Illuminate\Support\Collection;
 use Mateffy\Magic\Models\Options\ElElEmOptions;
 use Mateffy\Magic\Models\Options\Organization;
-use Mateffy\Magic\Models\Providers\UsesAnthropicApi;
+use Mateffy\Magic\Models\Providers\LLM\UsesAnthropicApi;
 
 class Anthropic extends ElElEm
 {
