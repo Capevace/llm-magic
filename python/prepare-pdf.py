@@ -1,4 +1,4 @@
-import fitz
+import pymupdf
 from PIL import Image
 import os
 from pdf2image import convert_from_path
@@ -169,7 +169,7 @@ def do_pdf(output):
         shutil.copy(temp_file_path, pdf_path)
 
         # open the pdf
-        doc = fitz.open(pdf_path)
+        doc = pymupdf.open(pdf_path)
 
         # extract the pages (and save any images in the images dir)
 #         pages = extract_pages(doc, images_dir)

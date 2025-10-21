@@ -1,4 +1,4 @@
-import fitz
+import pymupdf
 from PIL import Image as PILImage, ImageDraw, ImageFont, ImageStat
 
 import os
@@ -45,11 +45,11 @@ class Image:
         self.height = height
 
     def bbox(self):
-        return fitz.Rect(self.x, self.y, self.x + self.width, self.y + self.height)
+        return pymupdf.Rect(self.x, self.y, self.x + self.width, self.y + self.height)
 
     def text_bbox(self):
         width = max(self.width, 125)
-        return fitz.Rect(self.x, self.y, self.x + width, self.y + 25)
+        return pymupdf.Rect(self.x, self.y, self.x + width, self.y + 25)
 
     def to_dict(self):
         return {
