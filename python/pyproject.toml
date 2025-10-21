@@ -10,3 +10,7 @@ dependencies = [
     "pypdf2>=3.0.1",
     "python-magic>=0.4.27",
 ]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
