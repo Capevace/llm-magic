@@ -56,7 +56,7 @@ class PythonRunner
         }
 	}
 
-	protected function executeWithPython(): string
+	protected function executeWithPython(): mixed
 	{
 		$pythonDir = config('llm-magic.python.cwd');
         $pythonPath = config('llm-magic.python.bin.path');
