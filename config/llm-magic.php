@@ -29,8 +29,12 @@ return [
     ],
     'python' => [
         'cwd' => env('LLM_MAGIC_PYTHON_CWD', realpath(__DIR__ . '/../python')),
+        'use_uv' => env('LLM_MAGIC_PYTHON_USE_UV', true),
         'uv' => [
             'path' => env('LLM_MAGIC_PYTHON_UV_PATH', '/usr/bin/env uv'),
+        ],
+        'bin' => [
+            'path' => env('LLM_MAGIC_PYTHON_BIN_PATH', realpath(__DIR__ . '/../python/.venv/bin/python')),
         ],
     ],
     'apis' => [
