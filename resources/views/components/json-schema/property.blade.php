@@ -154,7 +154,7 @@
                 $propertySchema = ($schema['properties'] ?? [])[$property];
                 $propertyType = $propertySchema['type'] ?? 'string'; // We assume string if no type is defined
                 // Required in this context means the property needs to be present, but it may still be nullable
-                $required = collect($schema['required'])->contains($property);
+                $required = collect($schema['required'] ?? [])->contains($property);
                 $nullable = $propertySchema['type'] === 'null' || (is_array($propertySchema['type']) && in_array('null', $propertySchema['type']));
             ?>
             <x-llm-magic::json-schema.property
@@ -204,7 +204,7 @@
 
                         $propertyType = $propertySchema['type'] ?? 'string'; // We assume string if no type is defined
                         // Required in this context means the property needs to be present, but it may still be nullable
-                        $required = collect($schema['required'])->contains($property);
+                        $required = collect($schema['required'] ?? [])->contains($property);
                         $nullable = $propertySchema['type'] === 'null' || (is_array($propertySchema['type']) && in_array('null', $propertySchema['type']));
                     ?>
                     <div
