@@ -20,7 +20,7 @@ class SequentialAutoMergeStrategy extends Extractor
 
 		/** @var SmartDataMerger $merger */
 		$merger = app(SmartDataMerger::class);
-        $currentData = null;
+        $currentData = [];
 
         foreach ($batches as $batch) {
             $newData = $this->generate($batch, data: $currentData) ?? $currentData;
@@ -30,7 +30,7 @@ class SequentialAutoMergeStrategy extends Extractor
 					schema: $this->schema,
 					currentData: $currentData,
 					newData: $newData
-				);
+				) ?? [];
 
 				// Run an intermediate de-duplication step. Finds only exact 1:1 duplicates.
 				$exactDuplicateKeys = $merger->findExactDuplicatesWithHashing($currentData);

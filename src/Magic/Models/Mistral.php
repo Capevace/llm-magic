@@ -15,6 +15,7 @@ use Mateffy\Magic\Models\Providers\UsesOpenAiApi;
 class Mistral extends ElElEm implements HasMaximumImageCount
 {
 	public const string MISTRAL_LARGE = 'mistral-large-latest';
+    public const string MISTRAL_MEDIUM = 'mistral-medium-latest';
 	public const string MISTRAL_SMALL = 'mistral-small-latest';
 	public const string MISTRAL_SABA = 'mistral-saba-latest';
 
@@ -53,6 +54,7 @@ class Mistral extends ElElEm implements HasMaximumImageCount
     {
         return static::prefixModels([
             static::MISTRAL_LARGE => 'Mistral Large',
+            static::MISTRAL_MEDIUM => 'Mistral Medium',
 			static::MISTRAL_SMALL => 'Mistral Small',
 			static::PIXTRAL_LARGE => 'Pixtral Large',
 			static::PIXTRAL_12B => 'Pixtral 12B',

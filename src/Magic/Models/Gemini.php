@@ -23,6 +23,9 @@ class Gemini extends ElElEm
 	public const string GEMINI_2_5_FLASH_PREVIEW = 'gemini-2.5-flash-preview-04-17';
 	public const string GEMINI_2_5_PRO_PREVIEW = 'gemini-2.5-pro-preview-03-25';
 	public const string GEMINI_2_5_PRO_EXPERIMENTAL = 'gemini-2.5-pro-exp-03-25';
+    public const string GEMINI_2_5_FLASH_LITE = 'gemini-2.5-flash-lite';
+    public const string GEMINI_2_5_FLASH = 'gemini-2.5-flash';
+    public const string GEMINI_2_5_PRO = 'gemini-2.5-pro';
 
 	// Deprecated models
 
@@ -50,10 +53,10 @@ class Gemini extends ElElEm
         return static::prefixModels([
             static::GEMINI_1_5_FLASH => 'Gemini 1.5 Flash',
 			static::GEMINI_2_0_FLASH => 'Gemini 2.0 Flash',
-			static::GEMINI_2_0_FLASH_LITE => 'Gemini 2.0 Flash Lite',
-			static::GEMINI_2_5_PRO_PREVIEW => 'Gemini 2.5 Pro Preview',
-			static::GEMINI_2_5_PRO_EXPERIMENTAL => 'Gemini 2.5 Pro Experimental',
-			static::GEMINI_2_5_FLASH_PREVIEW => 'Gemini 2.5 Flash Preview',
+            static::GEMINI_2_0_FLASH_LITE => 'Gemini 2.0 Flash Lite',
+            static::GEMINI_2_5_FLASH_LITE => 'Gemini 2.5 Flash Lite',
+            static::GEMINI_2_5_FLASH => 'Gemini 2.5 Flash',
+            static::GEMINI_2_5_PRO => 'Gemini 2.5 Pro',
         ], $prefix, $prefixLabels);
     }
 

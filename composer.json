@@ -29,6 +29,7 @@
         "opis/json-schema": "^2.4",
         "phpoffice/phpspreadsheet": "*",
         "phpoffice/phpword": "^1.3",
+        "prism-php/prism": "^0.96.1",
         "spatie/async": "^1.7",
         "spatie/fork": "^1.2",
         "spatie/laravel-package-tools": "^1.16",

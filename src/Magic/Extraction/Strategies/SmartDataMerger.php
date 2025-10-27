@@ -102,8 +102,9 @@ class SmartDataMerger
 	 *
 	 * @return string[]
 	 */
-	public function findExactDuplicatesWithHashing(array $data): array
+	public function findExactDuplicatesWithHashing(?array $data): array
 	{
+        $data ??= [];
 		$keys = [];
 
 		foreach ($data as $key => $value) {

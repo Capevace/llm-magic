@@ -165,7 +165,7 @@ abstract class Extractor implements Strategy
 
 	protected function send(string $threadId, LLM $llm, Prompt $prompt, bool $logDataProgress = true): ?array
 	{
-		$data = Magic::chat()
+		$response = Magic::chat()
             ->model($llm)
             ->prompt($prompt)
             ->onMessageProgress(function (Message $message) use ($logDataProgress) {
@@ -187,8 +187,9 @@ abstract class Extractor implements Strategy
 
                 $this->logTokenStats(tokenStats: $lastTokenStats);
             })
-            ->stream()
-			->lastData();
+            ->stream();
+
+        $data = $response->lastData();
 
 		if ($data && $logDataProgress) {
 			$this->logDataProgress(data: $data);
@@ -213,6 +214,7 @@ abstract class Extractor implements Strategy
 			artifacts: $artifacts,
 			options: $this->contextOptions,
 			maxTokens: $this->chunkSize,
+            maxImages: 8,
 			llm: $this->llm
 		);
 	}
