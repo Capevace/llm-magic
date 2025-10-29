@@ -14,6 +14,7 @@
             "email": "github@mateffy.me"
         }
     ],
+    
     "require": {
         "php": "^8.3",
         "ext-fileinfo": "*",
